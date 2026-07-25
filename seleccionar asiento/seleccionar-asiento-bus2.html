@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+  <title>Vibe Transit - Elige tu asiento</title>
+  
+  <!-- Tailwind CSS v3 CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            whatsapp: {
+              green: '#25d366',
+              dark: '#121b22',
+              card: '#1f2c34',
+              surface: '#0b141a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style data-purpose="custom-styling">
+    body {
+      margin: 0;
+      background-color: #0b141a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: white;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .app-shell {
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .bus-map-container::-webkit-scrollbar { width: 4px; }
+    .bus-map-container::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+    .confirm-container { background: linear-gradient(to top, #0b141a 85%, transparent); }
+    .fixed-bottom {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    /* Plano vertical: se arma con N columnas dinámicas (según el ancho real
+       del bus que devuelva la API), de frente hacia atrás. */
+    #bus-grid {
+      display: grid;
+      gap: 6px;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    
+    <!-- BEGIN: WebviewHeader -->
+    <header class="sticky top-0 z-20 bg-[#202c33] px-4 py-2 flex items-center justify-between text-gray-300 text-sm border-b border-gray-700/30">
+      <div class="flex items-center gap-4">
+        <a class="font-medium text-white" data-nav="back" href="../buscar%20viaje/3-4.html">OK</a>
+        <div class="flex flex-col">
+          <span class="text-[10px] text-gray-400 flex items-center gap-1">
+            <svg class="w-2.5 h-2.5" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path></svg>
+            webtestcomercial.jelaf.com
+          </span>
+        </div>
+      </div>
+    </header>
+    <!-- END: WebviewHeader -->
+    
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <!-- BEGIN: TitleSection -->
+      <div class="pt-6 pb-3 text-center px-4 shrink-0" data-purpose="trip-info">
+        <h1 class="text-xl font-bold mb-1">Elige tu asiento</h1>
+        <p class="text-xs text-gray-400 uppercase tracking-wide" id="trip-subtitle">Cargando viaje...</p>
+      </div>
+      <!-- END: TitleSection -->
+      
+      <!-- BEGIN: FloorTabs -->
+      <div class="px-6 mb-4 shrink-0 hidden" id="floor-tabs" data-purpose="floor-tabs">
+        <div class="flex bg-whatsapp-dark p-1 rounded-xl border border-gray-800" id="floor-tabs-inner"></div>
+      </div>
+      <!-- END: FloorTabs -->
+      
+      <!-- BEGIN: BusLayoutContainer -->
+      <div class="flex-1 overflow-y-auto px-4 pb-40 bus-map-container" data-purpose="seating-area">
+        <p class="text-center text-xs text-gray-500" id="status-message">Consultando plano del bus...</p>
+        <div class="bg-whatsapp-dark/50 border border-gray-800 rounded-3xl p-4 relative hidden" id="bus-layout">
+          <p class="text-center text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">▲ Frente del bus</p>
+          <div id="bus-grid"><!-- Rendered dynamically by script --></div>
+          <p class="text-center text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-3">Parte trasera ▼</p>
+        </div>
+      </div>
+      <!-- END: BusLayoutContainer -->
+    </main>
+    
+    <!-- BEGIN: BottomLegendAndConfirmation -->
+    <div class="fixed-bottom z-10 confirm-container pt-4">
+      <div class="flex justify-center items-center gap-4 mb-4 text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-whatsapp-dark/80 backdrop-blur-sm py-2 mx-4 rounded-full border border-gray-800 flex-wrap">
+        <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>Libre</div>
+        <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>Ocupado</div>
+        <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-whatsapp-green"></div>Tuyo</div>
+      </div>
+      
+      <div class="flex justify-between items-center px-8 mb-2">
+        <div class="flex flex-col">
+          <span class="text-[10px] text-gray-500 font-bold uppercase" id="passenger-label">Selecciona asientos</span>
+          <span class="text-xs text-gray-300" id="selected-seats-display">Ninguno</span>
+        </div>
+        <div class="text-right">
+          <span class="text-lg font-bold text-white" id="total-price">S/ 0</span>
+        </div>
+      </div>
+      
+      <div class="px-4 pb-6">
+        <button class="w-full bg-whatsapp-green py-4 rounded-xl text-black font-black text-lg active:scale-95 transition-transform shadow-xl shadow-whatsapp-green/30 disabled:opacity-50 disabled:grayscale" disabled="" id="confirm-btn">
+          Confirmar
+        </button>
+      </div>
+    </div>
+    <!-- END: BottomLegendAndConfirmation -->
+    
+  </div>
+
+  <script>
+    // --- Backend real (api_ventas.py) ---
+    const API_BASE_URL = 'http://localhost:8000';
+
+    // --- Estado compartido del flujo de compra (localStorage) ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveBooking(partial) {
+      const updated = Object.assign({}, loadBooking(), partial);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    }
+
+    const booking = loadBooking();
+    
+    // 🛠️ CORRECCIÓN: Leemos "viajeSeleccionado" tal como lo guardamos en 3-4.html
+    if (!booking.viajeSeleccionado || !booking.busqueda) {
+      window.location.href = '../buscar%20viaje/1-2-corregir.html';
+    }
+
+    // Actualizamos los títulos con la info correcta
+    // Formatear visualmente la fecha de YYYY-MM-DD a DD/MM/YYYY
+    const visualDate = booking.busqueda.fecha.includes('-') 
+      ? booking.busqueda.fecha.split('-').reverse().join('/') 
+      : booking.busqueda.fecha;
+
+    document.getElementById('trip-subtitle').textContent =
+      `${booking.busqueda.origen} → ${booking.busqueda.destino} | ${visualDate} | ${booking.viajeSeleccionado.hora_viaje || ''}`.toUpperCase();
+
+    // Transpone una matriz [fila][columna] a un plano vertical
+    function transponerAVertical(rows) {
+      const numCols = Math.max(...rows.map(r => r.length));
+      const vertical = [];
+      for (let c = 0; c < numCols; c++) {
+        const filaVertical = [];
+        for (let r = 0; r < rows.length; r++) {
+          filaVertical.push(rows[r][c] || { type: 'empty' });
+        }
+        vertical.push(filaVertical);
+      }
+      return vertical;
+    }
+
+    // --- Selectors ---
+    const statusMessage = document.getElementById('status-message');
+    const busLayout = document.getElementById('bus-layout');
+    const busGrid = document.getElementById('bus-grid');
+    const floorTabs = document.getElementById('floor-tabs');
+    const floorTabsInner = document.getElementById('floor-tabs-inner');
+    const passengerLabel = document.getElementById('passenger-label');
+    const selectedSeatsDisplay = document.getElementById('selected-seats-display');
+    const totalPriceDisplay = document.getElementById('total-price');
+    const confirmBtn = document.getElementById('confirm-btn');
+
+    let planoPorPiso = {};       // { "1": { price, rows, verticalRows }, "2": {...} }
+    let currentFloor = null;
+    let selectedSeats = (booking.asientos || []).slice(); // [{ floor, id, price }]
+
+    const ICONS = {
+      tv: `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`,
+      exit: `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`,
+      stairs: `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`
+    };
+
+    function updateSummary() {
+      const count = selectedSeats.length;
+      const total = selectedSeats.reduce((sum, s) => sum + s.price, 0);
+
+      if (count === 0) {
+        passengerLabel.textContent = 'Selecciona asientos';
+        selectedSeatsDisplay.textContent = 'Ninguno';
+        totalPriceDisplay.textContent = 'S/ 0';
+        confirmBtn.textContent = 'Confirmar';
+        confirmBtn.disabled = true;
+      } else {
+        passengerLabel.textContent = `Pasajero${count > 1 ? 's' : ''} ${selectedSeats.map((_, i) => i + 1).join(', ')}`;
+        selectedSeatsDisplay.textContent = `Asiento${count > 1 ? 's' : ''} ${selectedSeats.map(s => s.id).join(', ')}`;
+        totalPriceDisplay.textContent = `S/ ${total}`;
+        confirmBtn.textContent = `Confirmar ${count} Asiento${count > 1 ? 's' : ''} por S/ ${total}`;
+        confirmBtn.disabled = false;
+      }
+    }
+
+    function toggleSeat(floor, id, price) {
+      const index = selectedSeats.findIndex(s => s.id === id && s.floor === floor);
+      if (index > -1) {
+        selectedSeats.splice(index, 1);
+      } else {
+        // Bloqueo de 5 pasajes máximo
+        if(selectedSeats.length >= 5) {
+          alert("Puedes seleccionar un máximo de 5 asientos por compra.");
+          return;
+        }
+        selectedSeats.push({ floor, id, price });
+      }
+      renderFloor();
+      updateSummary();
+    }
+
+    function renderFloor() {
+      const piso = planoPorPiso[currentFloor];
+      busGrid.innerHTML = '';
+      busGrid.style.gridTemplateColumns = `repeat(${piso.verticalRows[0].length}, minmax(0, 1fr))`;
+
+      piso.verticalRows.forEach(fila => {
+        fila.forEach(cell => {
+          const cellDiv = document.createElement('div');
+
+          if (cell.type === 'seat' || cell.type === 'occupied') {
+            const isOccupied = cell.type === 'occupied';
+            const isSelected = selectedSeats.some(s => s.id === cell.id && s.floor === currentFloor);
+
+            if (isOccupied) {
+              cellDiv.className = 'aspect-[4/5] bg-red-500/5 border border-red-500/50 rounded-lg flex items-center justify-center';
+              cellDiv.innerHTML = `
+                <div class="w-5 h-5 rounded-full border border-red-500/30 flex items-center justify-center opacity-40">
+                  <svg class="w-3.5 h-3.5 text-red-500" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" fill-rule="evenodd"></path></svg>
+                </div>`;
+            } else {
+              cellDiv.className = `aspect-[4/5] rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected ? 'bg-whatsapp-green/20 border-2 border-whatsapp-green' : 'bg-whatsapp-card border border-gray-700 hover:border-gray-500'}`;
+              cellDiv.innerHTML = `
+                <span class="text-sm font-black leading-none ${isSelected ? 'text-whatsapp-green' : 'text-gray-200'}">${cell.id}</span>
+                ${cell.angle ? `<span class="text-[9px] mt-1 ${isSelected ? 'text-whatsapp-green/70' : 'text-gray-500'}">${cell.angle}°</span>` : ''}
+              `;
+              // Enviamos el precio base que guardamos
+              cellDiv.addEventListener('click', () => toggleSeat(currentFloor, cell.id, piso.price));
+            }
+          } else if (cell.type === 'label') {
+            cellDiv.className = 'aspect-[4/5] rounded-lg flex items-center justify-center bg-gray-100/5 border border-gray-700';
+            cellDiv.innerHTML = `<span class="text-[10px] font-bold text-gray-400">${cell.text || ''}</span>`;
+          } else if (ICONS[cell.type]) {
+            cellDiv.className = 'aspect-[4/5] flex items-center justify-center';
+            cellDiv.innerHTML = ICONS[cell.type];
+          } else {
+            // empty / aisle
+            cellDiv.className = 'aspect-[4/5]';
+          }
+
+          busGrid.appendChild(cellDiv);
+        });
+      });
+    }
+
+    function renderFloorTabs() {
+      const pisos = Object.keys(planoPorPiso);
+      if (pisos.length <= 1) {
+        floorTabs.classList.add('hidden');
+        return;
+      }
+      floorTabs.classList.remove('hidden');
+      floorTabsInner.innerHTML = '';
+      pisos.forEach(piso => {
+        const btn = document.createElement('button');
+        const active = piso === currentFloor;
+        btn.className = `flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all ${active ? 'bg-whatsapp-green text-black shadow-lg shadow-whatsapp-green/20' : 'text-gray-400'}`;
+        btn.textContent = piso === '1' ? '1er Piso' : piso === '2' ? '2do Piso' : `Piso ${piso}`;
+        btn.addEventListener('click', () => {
+          currentFloor = piso;
+          renderFloorTabs();
+          renderFloor();
+        });
+        floorTabsInner.appendChild(btn);
+      });
+    }
+
+    async function cargarPlano() {
+      // 🛠️ CORRECCIÓN: Como armamos el payload exacto en la página 3-4, lo enviamos directo
+      const payload = booking.viajeSeleccionado;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/plano-bus`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.detail || 'No se pudo obtener el plano del bus.');
+
+        planoPorPiso = body.data || {};
+        Object.keys(planoPorPiso).forEach(piso => {
+          planoPorPiso[piso].verticalRows = transponerAVertical(planoPorPiso[piso].rows);
+        });
+        currentFloor = Object.keys(planoPorPiso)[0];
+
+        if (!currentFloor) throw new Error('El bus no tiene asientos configurados.');
+
+        statusMessage.classList.add('hidden');
+        busLayout.classList.remove('hidden');
+        renderFloorTabs();
+        renderFloor();
+        updateSummary();
+      } catch (err) {
+        statusMessage.textContent = `${err.message} (¿está corriendo api_ventas.py en ${API_BASE_URL}?)`;
+        statusMessage.classList.remove('hidden', 'text-gray-500');
+        statusMessage.classList.add('text-red-400');
+      }
+    }
+
+    confirmBtn.addEventListener('click', () => {
+      if (selectedSeats.length === 0) return;
+      saveBooking({ asientos: selectedSeats });
+      window.location.href = '../rellenar%20datos/8-9.html';
+    });
+
+    cargarPlano();
+  </script>
+</body>
+</html>

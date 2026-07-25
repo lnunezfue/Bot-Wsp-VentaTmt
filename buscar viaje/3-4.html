@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Vibe Transit - Resultados de búsqueda</title>
+  
+  <!-- Load Hanken Grotesk Font -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS v3 with plugins -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            whatsapp: '#25d366',
+            surface: '#0b141b',
+            'surface-dim': '#0b141b',
+            'surface-bright': '#313a42',
+            'surface-container': '#141d24',
+            'surface-container-low': '#141d24',
+            'surface-container-lowest': '#060f16',
+          },
+          fontFamily: {
+            sans: ['Hanken Grotesk', 'sans-serif'],
+          },
+          borderRadius: {
+            'custom': '8px',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style data-purpose="custom-layout">
+    body {
+      margin: 0;
+      background-color: #0b141b;
+      color: #ffffff;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .app-shell {
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+      position: relative;
+    }
+    .fixed-bottom {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .custom-radio {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #313a42;
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .custom-radio:checked { border-color: #25d366; }
+    .custom-radio:checked::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      background-color: #25d366;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased">
+<div class="app-shell">
+  
+  <!-- BEGIN: WhatsApp Browser Header -->
+  <header class="sticky top-0 z-50 bg-[#121b22] border-b border-gray-800 px-4 py-2 flex items-center justify-between" data-purpose="whatsapp-header">
+    <div class="flex items-center gap-4">
+      <a class="text-sm font-medium" data-nav="back" href="1-2-corregir.html">OK</a>
+      <div class="flex flex-col items-center">
+        <span class="text-xs font-bold leading-none">WhatsApp</span>
+        <span class="text-[10px] text-gray-400 flex items-center gap-1">
+          <svg class="h-2 w-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path>
+          </svg>
+          webtestcomercial.jelaf.com
+        </span>
+      </div>
+    </div>
+  </header>
+  <!-- END: WhatsApp Browser Header -->
+  
+  <main class="pb-32">
+    <!-- BEGIN: Route Title Section -->
+    <section class="px-4 pt-6 pb-4 text-center" data-purpose="route-title">
+      <h1 class="text-xl font-bold tracking-wider" id="route-title">Cargando...</h1>
+      <p class="text-gray-400 text-xs mt-1" id="route-subtitle">Selecciona una opción para continuar</p>
+    </section>
+    <!-- END: Route Title Section -->
+    
+    <!-- BEGIN: Date Selector -->
+    <section class="px-4 mb-6 overflow-x-auto no-scrollbar flex gap-2" data-purpose="date-selector" id="date-selector">
+      <!-- Chips de fecha generados por JS -->
+    </section>
+    <!-- END: Date Selector -->
+    
+    <!-- BEGIN: Bus Service List -->
+    <section class="px-4 space-y-4" data-purpose="service-list" id="service-list">
+      <!-- Tarjetas generadas por JS a partir de POST /api/v1/buscar-viajes -->
+    </section>
+    
+    <p class="px-4 text-xs text-gray-500 hidden" id="empty-state">No hay viajes para esta fecha. Prueba otra fecha.</p>
+    <p class="px-4 text-xs text-red-400 hidden" id="list-error"></p>
+    <!-- END: Bus Service List -->
+  </main>
+</div>
+
+<!-- BEGIN: Bottom Action Bar -->
+<footer class="fixed-bottom p-4 bg-surface/95 backdrop-blur-md border-t border-gray-800" data-purpose="bottom-navigation">
+  <button class="w-full bg-whatsapp text-surface-lowest font-bold py-4 rounded-custom text-center transition-transform active:scale-95 disabled:opacity-50" disabled id="btn-continuar">
+    Continuar
+  </button>
+</footer>
+<!-- END: Bottom Action Bar -->
+
+<script>
+    // --- Backend real (api_ventas.py) ---
+    const API_BASE_URL = 'http://localhost:8000';
+
+    // --- Estado compartido del flujo de compra (localStorage) ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveBooking(partial) {
+      const updated = Object.assign({}, loadBooking(), partial);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    }
+
+    let booking = loadBooking();
+    if (!booking.busqueda) {
+      window.location.href = '1-2-corregir.html'; 
+    }
+
+    const list = document.getElementById('service-list');
+    const emptyState = document.getElementById('empty-state');
+    const listError = document.getElementById('list-error');
+    const btnContinuar = document.getElementById('btn-continuar');
+    const dateSelector = document.getElementById('date-selector');
+
+    let resultados = booking.resultados || [];
+    let selectedIndex = 0;
+
+    // Fix para procesar correctamente las fechas en formato DD/MM/YYYY
+    function fechaLabel(iso) {
+      const partes = iso.includes('/') ? iso.split('/') : iso.split('-');
+      const diaStr = partes[0].length === 4 ? partes[2] : partes[0]; 
+      const mesStr = partes[0].length === 4 ? partes[1] : partes[1];
+      const anioStr = partes[0].length === 4 ? partes[0] : partes[2];
+      
+      const d = new Date(`${anioStr}-${mesStr}-${diaStr}T00:00:00`);
+      const dias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+      const meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+      return { dia: d.getDate(), etiqueta: `${dias[d.getDay()]}, ${meses[d.getMonth()]}` };
+    }
+
+    // 🛠️ MOTOR INTELIGENTE: Calcula horas de llegada estimadas y precios referenciales si el API manda 0
+    function getDetallesRuta(origen, destino, horaPartida, precioBaseAPI) {
+      const origenStr = origen.toUpperCase();
+      const destinoStr = destino.toUpperCase();
+      
+      // Diccionario de duraciones y precios base referenciales
+      const rutas = {
+        'LIMA-TACNA': { horas: 22, precio: 120 },
+        'TACNA-LIMA': { horas: 22, precio: 120 },
+        'TACNA-AREQUIPA': { horas: 6, precio: 60 },
+        'AREQUIPA-TACNA': { horas: 6, precio: 60 },
+        'LIMA-AREQUIPA': { horas: 16, precio: 100 },
+        'AREQUIPA-LIMA': { horas: 16, precio: 100 },
+        'DEFAULT': { horas: 12, precio: 60 } // Ruta genérica
+      };
+      
+      const key = `${origenStr}-${destinoStr}`;
+      const info = rutas[key] || rutas['DEFAULT'];
+
+      // Validamos precio
+      const precioFinal = (precioBaseAPI && precioBaseAPI > 0) ? precioBaseAPI : info.precio;
+
+      // Calculamos hora de llegada sumando las horas
+      let llegadaStr = "Por confirmar";
+      if (horaPartida && horaPartida !== "—") {
+        try {
+          const match = horaPartida.match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/);
+          if (match) {
+            let h = parseInt(match[1]);
+            let m = parseInt(match[2]);
+            let ampm = match[3] ? match[3].toUpperCase() : null;
+
+            if (ampm === 'PM' && h < 12) h += 12;
+            if (ampm === 'AM' && h === 12) h = 0;
+
+            h += info.horas; // Sumamos la duración del viaje
+            let diasExtra = Math.floor(h / 24);
+            h = h % 24;
+
+            let suffix = h >= 12 ? 'PM' : 'AM';
+            let h12 = h % 12;
+            if (h12 === 0) h12 = 12;
+
+            llegadaStr = `${h12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${suffix}`;
+            if (diasExtra > 0) llegadaStr += ` (+${diasExtra}d)`; // Indica si llega al día siguiente
+          }
+        } catch(e) {}
+      }
+
+      return { precio: precioFinal, llegada: llegadaStr, horasViaje: info.horas };
+    }
+
+    function renderHeader() {
+      document.getElementById('route-title').textContent = `${booking.busqueda.origen} - ${booking.busqueda.destino}`;
+      document.getElementById('route-subtitle').textContent = 'Selecciona una opción para continuar';
+    }
+
+    function renderDateSelector() {
+      dateSelector.innerHTML = '';
+      const { dia, etiqueta } = fechaLabel(booking.busqueda.fecha);
+      const chip = document.createElement('div');
+      chip.className = `flex-shrink-0 w-[80px] h-[64px] rounded-custom flex flex-col items-center justify-center cursor-pointer transition-colors border-2 border-whatsapp bg-whatsapp/10`;
+      chip.innerHTML = `
+        <span class="text-lg font-bold leading-tight text-white">${dia}</span>
+        <span class="text-[10px] uppercase text-whatsapp">${etiqueta}</span>
+      `;
+      dateSelector.appendChild(chip);
+    }
+
+    function renderServicios() {
+      list.innerHTML = '';
+      emptyState.classList.toggle('hidden', resultados.length > 0);
+      btnContinuar.disabled = resultados.length === 0;
+
+      resultados.forEach((s, i) => {
+        // Ejecutamos el motor de estimación para este bus
+        const detalles = getDetallesRuta(booking.busqueda.origen, booking.busqueda.destino, s.hora_partida, s.precio_base);
+
+        const article = document.createElement('article');
+        article.className = `bg-surface-container-low rounded-xl p-5 border ${i === selectedIndex ? 'border-whatsapp/60' : 'border-gray-800/50'} cursor-pointer`;
+        article.innerHTML = `
+          <header class="flex justify-between items-start mb-4">
+            <h2 class="text-sm font-bold tracking-wide uppercase text-gray-200">${s.servicio || 'Bus Cama'}</h2>
+          </header>
+          <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center mb-6">
+            <div class="space-y-1">
+              <span class="text-[10px] text-gray-500 uppercase">Salida</span>
+              <div class="text-lg font-bold">${s.hora_partida || '—'}</div>
+              <div class="text-xs font-bold uppercase truncate">${booking.busqueda.origen}</div>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="text-[10px] text-gray-500 mb-2">${detalles.horasViaje}h de viaje (aprox)</span>
+              <div class="relative w-20 flex items-center justify-center">
+                <div class="h-[1px] bg-gray-600 w-full"></div>
+                <div class="absolute right-0 w-1.5 h-1.5 border-t border-r border-gray-500 rotate-45"></div>
+                <div class="absolute left-0 w-1.5 h-1.5 rounded-full bg-gray-500"></div>
+              </div>
+            </div>
+            <div class="space-y-1 text-right">
+              <span class="text-[10px] text-gray-500 uppercase">Llegada</span>
+              <div class="text-lg font-bold text-whatsapp">${detalles.llegada}</div>
+              <div class="text-xs font-bold uppercase truncate">${booking.busqueda.destino}</div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input class="custom-radio" name="service-select" type="radio" ${i === selectedIndex ? 'checked' : ''}/>
+              <span class="bg-surface-bright/30 text-[10px] px-2 py-1.5 rounded-full">Placa ${s.placa || 'Por asignar'}</span>
+            </label>
+          </div>
+          <div class="text-right">
+            <p class="text-[10px] text-gray-500">Desde</p>
+            <p class="text-2xl font-bold text-whatsapp">S/ ${Number(detalles.precio).toFixed(2)}</p>
+          </div>
+        `;
+        article.addEventListener('click', () => {
+          selectedIndex = i;
+          renderServicios(); 
+        });
+        list.appendChild(article);
+      });
+    }
+
+    async function buscarViajes() {
+      listError.classList.add('hidden');
+      list.innerHTML = '<p class="text-xs text-gray-500 px-1">Buscando viajes...</p>';
+      renderHeader();
+      renderDateSelector();
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/buscar-viajes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(booking.busqueda)
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.detail || 'No se pudo buscar viajes.');
+        resultados = body.data || [];
+        selectedIndex = 0;
+        booking = saveBooking({ resultados });
+        renderServicios();
+      } catch (err) {
+        list.innerHTML = '';
+        listError.textContent = `${err.message} (¿está corriendo api_ventas.py en ${API_BASE_URL}?)`;
+        listError.classList.remove('hidden');
+        btnContinuar.disabled = true;
+      }
+    }
+
+    btnContinuar.addEventListener('click', function () {
+      if (resultados.length === 0 || selectedIndex < 0) return;
+
+      const viajeElegido = resultados[selectedIndex];
+
+      const viajeSeleccionadoParaPlano = {
+        codi_empresa: viajeElegido.codi_empresa,
+        codi_origen: viajeElegido.codi_origen,
+        codi_destino: viajeElegido.codi_destino,
+        codi_sucursal: viajeElegido.codi_sucursal,
+        codi_ruta: viajeElegido.codi_ruta,
+        codi_punto_venta: viajeElegido.codi_punto_venta,
+        codi_servicio: viajeElegido.codi_servicio,
+        fecha_viaje: booking.busqueda.fecha, 
+        hora_viaje: viajeElegido.hora_partida,
+        placa_bus: viajeElegido.placa,
+        precio_base: viajeElegido.precio_base, // El precio base que llega del JSON
+        id_programacion: viajeElegido.id_programacion 
+      };
+
+      saveBooking({ viajeSeleccionado: viajeSeleccionadoParaPlano });
+      window.location.href = '../seleccionar asiento/seleccionar-asiento-bus2.html'; 
+    });
+
+    renderHeader();
+    renderDateSelector();
+    
+    if (resultados.length > 0) {
+      renderServicios();
+    } else {
+      buscarViajes();
+    }
+</script>
+</body>
+</html>

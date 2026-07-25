@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Confirmando Pago - Vibe Transit</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- Google Fonts: Hanken Grotesk -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Hanken Grotesk', 'sans-serif'],
+          },
+          colors: {
+            whatsapp: {
+              green: '#25d366',
+              dark: '#0b141b',
+              card: '#1d272f',
+              header: '#202c33',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style data-purpose="custom-layout">
+    body {
+      background-color: #0b141b;
+      color: white;
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .app-shell {
+      max-width: 500px;
+      margin: 0 auto;
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bg-overlay {
+      background-color: #0b141b;
+      position: relative;
+      height: 100%;
+      width: 100%;
+      z-index: 0;
+    }
+
+    .loader {
+      border: 4px solid rgba(37, 211, 102, 0.1);
+      border-top: 4px solid #25d366;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="font-sans">
+<div class="app-shell">
+  
+  <!-- BEGIN: WhatsApp WebView Header -->
+  <header class="bg-whatsapp-header px-4 py-3 flex items-center justify-between border-b border-gray-700 z-50" data-purpose="webview-header">
+    <div class="flex items-center space-x-4">
+      <span class="text-white text-lg font-normal opacity-40">OK</span>
+    </div>
+    <div class="flex flex-col items-center flex-grow">
+      <span class="text-xs text-gray-400 font-medium">WhatsApp</span>
+      <span class="text-[10px] text-gray-500">webtestcomercial.jelaf.com</span>
+    </div>
+    <div class="flex items-center">
+      <svg fill="white" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="5" r="2"></circle>
+        <circle cx="12" cy="12" r="2"></circle>
+        <circle cx="12" cy="19" r="2"></circle>
+      </svg>
+    </div>
+  </header>
+  <!-- END: WhatsApp WebView Header -->
+  
+  <!-- BEGIN: Main Content Area -->
+  <main class="relative flex-grow flex items-center justify-center p-6 bg-overlay" data-purpose="main-loading-screen">
+    <!-- BEGIN: Loading Card -->
+    <section class="relative z-10 w-full max-w-sm bg-whatsapp-card rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl border border-gray-800" data-purpose="status-card">
+      <div class="mb-6">
+        <div class="loader"></div>
+      </div>
+      <h1 class="text-white text-xl font-bold mb-3 tracking-tight">
+        Confirmando tu pago
+      </h1>
+      <p class="text-gray-400 text-sm leading-relaxed mb-6" id="status-text">
+        Estamos procesando la respuesta de Niubiz.
+      </p>
+      <span class="text-gray-500 text-xs font-medium" id="pedido-ref">
+        Pedido 000000000
+      </span>
+      <button class="mt-5 w-full bg-whatsapp-green text-whatsapp-dark font-bold py-3 rounded-xl hidden" id="btn-retry">
+        Reintentar
+      </button>
+    </section>
+    <!-- END: Loading Card -->
+  </main>
+  <!-- END: Main Content Area -->
+  
+</div>
+
+<script>
+    // --- Backend real (api_ventas.py) ---
+    const API_BASE_URL = 'http://localhost:8000';
+
+    // --- Estado compartido del flujo de compra (localStorage) ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveBooking(partial) {
+      const updated = Object.assign({}, loadBooking(), partial);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    }
+
+    const booking = loadBooking();
+    
+    // 🛠️ CORRECCIÓN 1: Leer viajeSeleccionado
+    if (!booking.viajeSeleccionado || !booking.asientos || !booking.pasajeros) {
+      window.location.href = '../buscar%20viaje/1-2-corregir.html';
+    }
+
+    const pedido = booking.pago && booking.pago.referenciaOperacion
+      ? booking.pago.referenciaOperacion
+      : String(Math.floor(100000000 + Math.random() * 900000000));
+
+    document.getElementById('pedido-ref').textContent = `Pedido ${pedido}`;
+
+    const loader = document.querySelector('.loader');
+    const statusText = document.getElementById('status-text');
+    const btnRetry = document.getElementById('btn-retry');
+
+    // Simula el tiempo de espera de Niubiz y luego confirma la compra
+    async function confirmarCompra() {
+      loader.classList.remove('hidden');
+      btnRetry.classList.add('hidden');
+      statusText.textContent = 'Estamos procesando la respuesta de Niubiz.';
+      statusText.classList.remove('text-red-400');
+
+      // 🛠️ CORRECCIÓN 2: Obtener el objeto correcto
+      const v = booking.viajeSeleccionado; 
+      
+      const payload = {
+        codi_programacion: parseInt(v.id_programacion) || 0,
+        codi_empresa: parseInt(v.codi_empresa) || 1,
+        codi_origen: parseInt(v.codi_origen) || 0,
+        codi_destino: parseInt(v.codi_destino) || 0,
+        codi_sucursal: parseInt(v.codi_sucursal) || 0,
+        codi_ruta: parseInt(v.codi_ruta) || 0,
+        codi_punto_venta: parseInt(v.codi_punto_venta) || 0,
+        codi_servicio: parseInt(v.codi_servicio) || 0,
+        fecha_viaje: booking.busqueda.fecha,
+        hora_viaje: v.hora_viaje || v.hora_partida,
+        asientos_seleccionados: booking.asientos.map(a => String(a.id)),
+        pasajeros: booking.pasajeros.map((p, index) => ({
+          documento: String(p.documento || ''),
+          nombres: String(p.nombres || ''),
+          paterno: String(p.paterno || ''),
+          materno: String(p.materno || ''),
+          fecha_nacimiento: String(p.nacimiento || p.fecha_nacimiento || '2000-01-01'),
+          precio_venta: Number(booking.asientos[index]?.price || 0) // Extraemos precio directo de la selección
+        })),
+        pago: {
+          metodo: 'TARJETA',
+          referencia_operacion: pedido,
+          monto_total: Number(booking.montoTotal) || 0
+        }
+      };
+
+      await new Promise(r => setTimeout(r, 1500)); // sensación de espera de la pasarela
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/confirmar-compra`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.detail || 'No se pudo confirmar la compra.');
+
+        saveBooking({
+          pago: { metodo: 'TARJETA', referenciaOperacion: pedido, montoTotal: booking.montoTotal || 0 },
+          boletos: (body.data && body.data.boletos) || []
+        });
+        
+        // 🛠️ NOTA: Revisa que tu archivo 17-18.html esté en la ruta correcta.
+        // Si no está en la misma carpeta que este archivo, ajusta la ruta.
+        window.location.href = '17-18.html'; 
+        
+      } catch (err) {
+        loader.classList.add('hidden');
+        statusText.textContent = `${err.message}`;
+        statusText.classList.add('text-red-400');
+        btnRetry.classList.remove('hidden');
+      }
+    }
+
+    btnRetry.addEventListener('click', confirmarCompra);
+    confirmarCompra();
+</script>
+</body>
+</html>

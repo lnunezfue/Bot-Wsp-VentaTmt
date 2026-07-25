@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html class="h-full" lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Pago Confirmado - Vibe Transit</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            vibe: {
+              bg: '#0b141b',
+              surface: '#121b22',
+              card: '#1f2c34',
+              green: '#25d366',
+              textPrimary: '#e9edef',
+              textSecondary: '#8696a0',
+              border: '#2a3942'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style data-purpose="background-pattern">
+    body {
+      margin: 0;
+    }
+    .app-shell {
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .bg-pattern {
+      background-color: #0b141b;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10l5 5m10-5l-5 5M50 20v10m-5-5h10M80 15l-10 10m20 20h-10m-20 40l10-10m10 10l-5-5' stroke='%231f2c34' stroke-width='1' fill='none' fill-rule='evenodd' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+    }
+  </style>
+</head>
+<body class="bg-vibe-bg text-vibe-textPrimary h-full flex flex-col font-sans selection:bg-vibe-green/30">
+<div class="app-shell">
+  
+  <!-- BEGIN: WhatsApp Header Simulation -->
+  <header class="bg-[#121b22] border-b border-vibe-border px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-4">
+      <span class="text-vibe-textPrimary font-medium text-sm opacity-40">OK</span>
+      <div class="flex flex-col">
+        <span class="text-xs text-vibe-textSecondary flex items-center gap-1">
+          <svg class="w-3 h-3 fill-vibe-textSecondary" viewbox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"></path></svg>
+          webtestcomercial.jelaf.com
+        </span>
+      </div>
+    </div>
+  </header>
+  <!-- END: WhatsApp Header Simulation -->
+  
+  <!-- BEGIN: Main Content Container -->
+  <main class="flex-grow flex flex-col items-center px-6 pt-8 pb-10 bg-pattern overflow-y-auto">
+    <!-- BEGIN: Page Title -->
+    <div class="text-center mb-8" data-purpose="title-section">
+      <h1 class="text-2xl font-bold mb-1 text-vibe-green">¡Pago confirmado!</h1>
+      <p class="text-vibe-textSecondary text-sm tracking-wider uppercase" id="route-total">Cargando...</p>
+    </div>
+    <!-- END: Page Title -->
+    
+    <!-- BEGIN: Transaction Details Card -->
+    <div class="w-full max-w-sm bg-vibe-card/90 backdrop-blur-sm rounded-2xl border border-vibe-border overflow-hidden shadow-2xl" data-purpose="payment-card">
+      <div class="p-5 flex items-start gap-4 border-b border-vibe-border bg-vibe-surface/30">
+        <div class="flex-shrink-0 w-10 h-10 bg-vibe-green/10 rounded-full border border-vibe-green/30 flex items-center justify-center">
+          <svg class="w-6 h-6 text-vibe-green" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+            <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold leading-tight">Transacción exitosa</h2>
+          <p class="text-vibe-textSecondary text-sm mt-1">Tus boletos ya están emitidos.</p>
+        </div>
+      </div>
+      
+      <div class="p-5 space-y-4" data-purpose="details-list" id="details-list">
+        <!-- filas dinámicas -->
+      </div>
+      
+      <div class="px-5 pb-6 pt-2">
+        <button class="w-full bg-vibe-green hover:bg-emerald-500 text-vibe-bg font-bold py-4 rounded-xl transition-all duration-200 shadow-lg active:scale-[0.98]" id="btn-nueva-compra">
+          Realizar otra compra
+        </button>
+      </div>
+      
+      <div class="pb-6 flex justify-center items-center gap-2">
+        <svg class="w-3.5 h-3.5 text-vibe-textSecondary" fill="currentColor" viewbox="0 0 20 20">
+          <path clip-rule="evenodd" d="M10 1.944A11.94 11.94 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.942 11.942 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" fill-rule="evenodd"></path>
+        </svg>
+        <span class="text-xs text-vibe-textSecondary font-medium">Comprobante validado por JELAF</span>
+      </div>
+    </div>
+    <!-- END: Transaction Details Card -->
+  </main>
+  <!-- END: Main Content Container -->
+  
+  <!-- BEGIN: iOS Home Indicator Simulation -->
+  <footer class="bg-vibe-bg pb-2 flex justify-center">
+    <div class="w-32 h-1.5 bg-vibe-textSecondary/20 rounded-full"></div>
+  </footer>
+  <!-- END: iOS Home Indicator Simulation -->
+  
+</div>
+
+<script>
+    const API_BASE_URL = 'http://localhost:8000';
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+
+    const booking = loadBooking();
+    const busqueda = booking.busqueda || {};
+    const viaje = booking.viajeSeleccionado || {}; 
+    const pago = booking.pago || {};
+    const total = pago.montoTotal || booking.montoTotal || 0; 
+    const boletos = booking.boletos || [];
+    const hoy = new Date().toLocaleDateString('es-PE');
+
+    const fechaViajeVisual = busqueda.fecha && busqueda.fecha.includes('-')
+      ? busqueda.fecha.split('-').reverse().join('/')
+      : busqueda.fecha || '—';
+
+    document.getElementById('route-total').textContent =
+      `${busqueda.origen || '—'} a ${busqueda.destino || '—'} - S/ ${total.toFixed(2)}`;
+
+    // Función para pedirle el PDF al Backend
+    // Función para pedirle el PDF al Backend
+    async function descargarBoleto(indice) {
+        const boleto = boletos[indice];
+        
+        // 🛠️ CORRECCIÓN: Forzamos los tipos de datos a Strings y Números exactos
+        const payload = {
+            nro_boleto: String(boleto.nro_boleto || "BP-0000"),
+            pasajero: String(boleto.pasajero || "PASAJERO"),
+            documento: String(boleto.documento || "00000000"),
+            origen: String(busqueda.origen || "ORIGEN"),
+            destino: String(busqueda.destino || "DESTINO"),
+            fecha: String(fechaViajeVisual || "00/00/0000"),
+            hora: String(viaje.hora_viaje || viaje.hora_partida || '—'),
+            asiento: String(boleto.asiento || "00"),
+            precio: Number(boleto.precio || 0)
+        };
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/v1/descargar-boleto`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                // 🛠️ CORRECCIÓN: Extraemos el error real del backend
+                const errorData = await res.json();
+                throw new Error(errorData.detail || "Error interno del servidor");
+            }
+
+            // Magia para descargar el archivo en el navegador
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Boleto_${boleto.nro_boleto}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+        } catch(e) {
+            // Ahora la alerta nos dirá exactamente por qué falló
+            alert(`No se pudo descargar el boleto:\n${e.message}`);
+        }
+    }
+
+    // Inyectamos la interfaz de los boletos CON EL BOTÓN DE DESCARGAR
+    const filasBoletos = boletos.map((b, idx) => `
+      <div class="flex justify-between items-center py-1">
+        <span class="text-vibe-textSecondary text-sm">Asiento ${b.asiento}</span>
+        <span class="font-bold text-sm text-vibe-green tracking-wide">${b.nro_boleto}</span>
+      </div>
+      <div class="flex justify-between items-center pb-2 -mt-1">
+        <span class="text-vibe-textSecondary text-xs truncate mr-4">${b.pasajero}</span>
+        <button onclick="descargarBoleto(${idx})" class="text-xs bg-vibe-green text-black px-3 py-1.5 rounded font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          PDF
+        </button>
+      </div>
+      <div class="border-t border-vibe-border mb-2"></div>
+    `).join('');
+
+    document.getElementById('details-list').innerHTML = `
+      <div class="flex justify-between items-center py-1">
+        <span class="text-vibe-textSecondary text-sm">Ruta</span>
+        <span class="font-semibold text-sm uppercase">${busqueda.origen || '—'} - ${busqueda.destino || '—'}</span>
+      </div>
+      <div class="border-t border-vibe-border"></div>
+      
+      <div class="flex justify-between items-center py-1">
+        <span class="text-vibe-textSecondary text-sm">Fecha de Viaje</span>
+        <span class="font-semibold text-sm">${fechaViajeVisual} a las ${viaje.hora_viaje || viaje.hora_partida || '—'}</span>
+      </div>
+      <div class="border-t border-vibe-border"></div>
+      
+      <div class="flex justify-between items-center py-1">
+        <span class="text-vibe-textSecondary text-sm">Monto Pagado</span>
+        <span class="font-semibold text-sm">S/ ${total.toFixed(2)}</span>
+      </div>
+      <div class="border-t border-vibe-border"></div>
+      
+      <div class="flex justify-between items-center py-1 mb-2">
+        <span class="text-vibe-textSecondary text-sm">Nro. de Pedido</span>
+        <span class="font-mono text-xs text-vibe-textSecondary">${pago.referenciaOperacion || '—'}</span>
+      </div>
+      
+      <div class="bg-vibe-surface/50 rounded-xl p-3 border border-vibe-border">
+        <h3 class="text-[10px] font-bold text-vibe-textSecondary uppercase tracking-widest mb-3">Tus Boletos</h3>
+        ${filasBoletos || '<p class="text-xs text-gray-500 py-1">Error: No se recibieron boletos del servidor.</p>'}
+      </div>
+    `;
+
+    document.getElementById('btn-nueva-compra').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      window.location.href = '../buscar%20viaje/1-2-corregir.html';
+    });
+</script>
+</body>
+</html>

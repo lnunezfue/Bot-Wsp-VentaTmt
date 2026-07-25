@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Buscar Viaje - WhatsApp Bus</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            whatsapp: {
+              green: '#25d366',
+              dark: '#121b22',
+              header: '#1f2c34',
+              surface: '#1f2c34',
+              input: '#2a3942'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="custom-background">
+    body {
+      background-color: #0b141a; /* Background base similar to WhatsApp dark mode */
+      color: #e9edef;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Pattern overlay to simulate travel icons background */
+    .travel-pattern-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.05;
+      pointer-events: none;
+      background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); /* Generic pattern placeholder */
+      z-index: 0;
+    }
+
+    /* Main container ensures full height for mobile view */
+    .app-container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 500px; /* Centering for desktop preview while keeping mobile look */
+      margin: 0 auto;
+    }
+  </style>
+<style data-purpose="form-elements">
+    /* Custom styling for select and input to match the dark theme in image */
+    .custom-input {
+      background-color: #2a3942;
+      border: 1px solid #3b4a54;
+      border-radius: 12px;
+      padding: 12px 16px;
+      width: 100%;
+      color: #e9edef;
+      appearance: none;
+      font-size: 16px;
+    }
+
+    .custom-input:focus {
+      outline: none;
+      border-color: #25d366;
+    }
+
+    .input-label {
+      color: #8696a0;
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .select-wrapper::after {
+      content: '▼';
+      font-size: 10px;
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #8696a0;
+    }
+
+    /* El date input NO debe llevar appearance:none: en varios navegadores/webviews
+       (incluido el de WhatsApp) eso deja de detectar el toque que abre el calendario. */
+    #fecha {
+      appearance: auto;
+      -webkit-appearance: auto;
+      color-scheme: dark;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.6;
+      cursor: pointer;
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="antialiased h-full overflow-hidden">
+<div class="travel-pattern-overlay"></div>
+<!-- BEGIN: MainContainer -->
+<div class="app-container">
+<!-- BEGIN: WhatsAppHeader -->
+<header class="bg-whatsapp-header px-4 py-3 flex items-center justify-between border-b border-gray-800" data-purpose="ios-style-header">
+<div class="flex items-center space-x-4">
+<span class="text-blue-400 font-medium">OK</span>
+</div>
+<div class="text-center">
+<h1 class="text-[15px] font-semibold leading-tight">WhatsApp</h1>
+<p class="text-[11px] text-gray-400 flex items-center justify-center">
+<svg class="w-3 h-3 mr-1" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path></svg>
+          webtestcomercial.jelaf.com
+        </p>
+</div>
+<div class="flex items-center">
+<button class="text-white">
+<svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
+</button>
+</div>
+</header>
+<!-- END: WhatsAppHeader -->
+<!-- BEGIN: MainContent -->
+<main class="flex-grow flex flex-col p-6 overflow-y-auto" data-purpose="search-form-container">
+<div class="text-center mb-8">
+<h2 class="text-3xl font-bold text-white mb-2">Buscar viaje</h2>
+<p class="text-gray-400 text-sm">Selecciona origen, destino y fecha</p>
+</div>
+<!-- BEGIN: SearchForm -->
+<section class="space-y-6">
+<!-- Origen Field -->
+<div class="form-group">
+<label class="input-label">Origen</label>
+<div class="relative select-wrapper">
+<select class="custom-input" data-purpose="location-picker" id="origen">
+<option disabled="" selected="" value="">-- Selecciona --</option>
+<option value="LIMA">Lima</option>
+<option value="TACNA">Tacna</option>
+<option value="AREQUIPA">Arequipa</option>
+<option value="CUSCO">Cusco</option>
+</select>
+</div>
+</div>
+<!-- Destino Field -->
+<div class="form-group">
+<label class="input-label">Destino</label>
+<div class="relative select-wrapper">
+<select class="custom-input" data-purpose="location-picker" id="destino">
+<option disabled="" selected="" value="">-- Selecciona --</option>
+<option value="LIMA">Lima</option>
+<option value="TACNA">Tacna</option>
+<option value="AREQUIPA">Arequipa</option>
+<option value="CUSCO">Cusco</option>
+</select>
+</div>
+</div>
+<!-- Fecha Field -->
+<div class="form-group">
+<label class="input-label">Fecha</label>
+<div class="relative">
+<input class="custom-input pr-10" data-purpose="date-picker" id="fecha" type="date"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer" id="fecha-icon">
+<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+<p class="text-red-400 text-xs hidden" id="form-error">Completa origen, destino y fecha (deben ser distintos).</p>
+</section>
+<!-- END: SearchForm -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: FooterAction -->
+<footer class="p-6 bg-transparent" data-purpose="bottom-action-bar">
+<p class="text-red-400 text-xs mb-3 hidden" id="api-error"></p>
+<button class="w-full bg-whatsapp-green hover:bg-green-500 text-black font-bold py-4 rounded-xl transition-colors text-lg disabled:opacity-60" id="btn-continuar">
+        Continuar
+      </button>
+</footer>
+<!-- END: FooterAction -->
+</div>
+<!-- END: MainContainer -->
+<script data-purpose="simple-interactions">
+    // --- Backend real (api_ventas.py) ---
+    const API_BASE_URL = 'http://localhost:8000';
+
+    // --- Estado compartido del flujo de compra (localStorage) ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function saveBooking(partial) {
+      let current = {};
+      try { current = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) {}
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.assign({}, current, partial)));
+    }
+
+    // Fecha por defecto: hoy. min = hoy para no permitir fechas pasadas,
+    // sin max para poder elegir cualquier fecha futura.
+    const fechaInput = document.getElementById('fecha');
+    const hoyISO = new Date().toISOString().slice(0, 10);
+    fechaInput.value = hoyISO;
+    fechaInput.min = hoyISO;
+
+    // El icono decorativo abre el picker nativo (algunos webviews no abren
+    // el calendario si el toque no cae exactamente sobre el indicador nativo).
+    document.getElementById('fecha-icon').addEventListener('click', () => {
+      if (typeof fechaInput.showPicker === 'function') {
+        fechaInput.showPicker();
+      } else {
+        fechaInput.focus();
+      }
+    });
+
+    const btnContinuar = document.getElementById('btn-continuar');
+    const apiError = document.getElementById('api-error');
+
+    btnContinuar.addEventListener('click', async function () {
+      const origen = document.getElementById('origen').value;
+      const destino = document.getElementById('destino').value;
+      const fecha = fechaInput.value;
+      const errorMsg = document.getElementById('form-error');
+      apiError.classList.add('hidden');
+
+      if (!origen || !destino || !fecha || origen === destino) {
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+      errorMsg.classList.add('hidden');
+
+      btnContinuar.disabled = true;
+      btnContinuar.textContent = 'Buscando...';
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/buscar-viajes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ origen, destino, fecha })
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.detail || 'No se pudo buscar viajes.');
+
+        const resultados = body.data || [];
+        if (resultados.length === 0) {
+          apiError.textContent = 'No se encontraron viajes para esa ruta y fecha.';
+          apiError.classList.remove('hidden');
+          return;
+        }
+
+        saveBooking({ busqueda: { origen, destino, fecha }, resultados });
+        window.location.href = '3-4.html';
+      } catch (err) {
+        apiError.textContent = `${err.message} (¿está corriendo api_ventas.py en ${API_BASE_URL}?)`;
+        apiError.classList.remove('hidden');
+      } finally {
+        btnContinuar.disabled = false;
+        btnContinuar.textContent = 'Continuar';
+      }
+    });
+  </script>
+</body></html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vibe Transit - Datos de pasajeros</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            whatsapp: {
+              dark: '#0b141b',
+              card: '#1c262d',
+              input: '#121b22',
+              green: '#25d366',
+              text: '#e9edef',
+              muted: '#8696a0',
+              border: '#2a3942'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-styling">
+    body {
+      margin: 0;
+      background-color: #0b141b;
+      color: #e9edef;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .app-shell {
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .fixed-bottom {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    /* Hide default date icon to style custom one */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.5;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 10px;
+    }
+    input:invalid, select:invalid {
+      border-color: #2a3942;
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+<!-- BEGIN: AppHeader -->
+<header class="sticky top-0 z-50 bg-whatsapp-card border-b border-whatsapp-border px-4 py-3 flex items-center justify-between" data-purpose="whatsapp-browser-header">
+<div class="flex items-center gap-4">
+<a class="text-whatsapp-green font-medium text-lg" data-nav="back" href="../seleccionar%20asiento/seleccionar-asiento-bus2.html">Atrás</a>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-xs text-whatsapp-muted flex items-center gap-1">
+<svg class="w-3 h-3" fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" fill-rule="evenodd"></path>
+</svg>
+        webtestcomercial.jelaf.com
+      </span>
+</div>
+<div class="w-12"></div>
+</header>
+<!-- END: AppHeader -->
+<!-- BEGIN: MainContent -->
+<main class="flex-grow p-4 overflow-y-auto custom-scrollbar pb-28">
+<h1 class="text-xl font-semibold mb-1 text-whatsapp-text">Datos de Pasajeros</h1>
+<p class="text-xs text-whatsapp-muted mb-4" id="seat-summary"></p>
+<!-- BEGIN: PassengerForms -->
+<form id="passenger-form" class="space-y-4">
+<div id="passenger-forms-container"></div>
+</form>
+<!-- END: PassengerForms -->
+</main>
+<!-- END: MainContent -->
+</div>
+<!-- BEGIN: BottomAction -->
+<div class="fixed-bottom p-4 bg-whatsapp-dark border-t border-whatsapp-border" data-purpose="footer-navigation">
+<button class="w-full bg-whatsapp-green hover:bg-emerald-500 text-black font-bold py-4 rounded-xl transition-colors active:scale-95 duration-75" id="btn-continuar">
+      Continuar
+    </button>
+</div>
+<!-- END: BottomAction -->
+<script>
+    // --- Estado compartido del flujo de compra (localStorage) ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveBooking(partial) {
+      const updated = Object.assign({}, loadBooking(), partial);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    }
+
+    const booking = loadBooking();
+    const asientos = booking.asientos && booking.asientos.length ? booking.asientos : [{ id: '01', price: 70 }];
+
+    document.getElementById('seat-summary').textContent =
+      `${asientos.length} pasajero${asientos.length > 1 ? 's' : ''} · Asiento${asientos.length > 1 ? 's' : ''} ${asientos.map(a => a.id).join(', ')}`;
+
+    const container = document.getElementById('passenger-forms-container');
+    const existentes = booking.pasajeros || [];
+
+    asientos.forEach((asiento, i) => {
+      const p = existentes[i] || {};
+      const card = document.createElement('section');
+      card.className = 'bg-whatsapp-card rounded-xl p-5 border border-whatsapp-border';
+      card.dataset.purpose = 'passenger-form';
+      card.innerHTML = `
+        <div class="flex items-center gap-2 mb-6">
+          <span class="text-whatsapp-green font-bold">Pasajero ${i + 1}</span>
+          <span class="text-whatsapp-muted text-sm">• Asiento: ${asiento.id}</span>
+        </div>
+        <div class="space-y-5">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-1">
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Documento</label>
+              <select class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3" data-field="tipoDocumento">
+                <option value="01" ${p.tipoDocumento === '01' || !p.tipoDocumento ? 'selected' : ''}>DNI</option>
+                <option value="02" ${p.tipoDocumento === '02' ? 'selected' : ''}>Pasaporte</option>
+                <option value="03" ${p.tipoDocumento === '03' ? 'selected' : ''}>C.E.</option>
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Número</label>
+              <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 placeholder-gray-600" data-field="documento" placeholder="72677853" required type="text" value="${p.documento || ''}"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Nombres</label>
+            <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 uppercase" data-field="nombres" placeholder="Nombres completos" required type="text" value="${p.nombres || ''}"/>
+          </div>
+          <div class="grid grid-cols-1 gap-5">
+            <div>
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Apellido Paterno</label>
+              <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 uppercase" data-field="paterno" required type="text" value="${p.paterno || ''}"/>
+            </div>
+            <div>
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Apellido Materno</label>
+              <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 uppercase" data-field="materno" type="text" value="${p.materno || ''}"/>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Sexo</label>
+              <select class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3" data-field="sexo">
+                <option value="M" ${p.sexo === 'M' || !p.sexo ? 'selected' : ''}>Masculino</option>
+                <option value="F" ${p.sexo === 'F' ? 'selected' : ''}>Femenino</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Nacimiento</label>
+              <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 pr-10" data-field="nacimiento" required type="date" value="${p.nacimiento || ''}"/>
+            </div>
+          </div>
+          ${i === 0 ? `
+          <div>
+            <label class="flex items-center gap-1 text-xs text-whatsapp-muted mb-1.5 ml-1">
+              Correo Electrónico <span class="font-bold">(Obligatorio)</span>
+            </label>
+            <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 lowercase" data-field="email" placeholder="ejemplo@correo.com" required type="email" value="${p.email || ''}"/>
+          </div>
+          <div>
+            <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Teléfono <span class="italic">(Opcional)</span></label>
+            <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3" data-field="telefono" placeholder="999 999 999" type="tel" value="${p.telefono || ''}"/>
+          </div>
+          ` : ''}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    document.getElementById('btn-continuar').addEventListener('click', () => {
+      const form = document.getElementById('passenger-form');
+      if (!form.reportValidity()) return;
+
+      const cards = container.querySelectorAll('[data-purpose="passenger-form"]');
+      const pasajeros = Array.from(cards).map((card, i) => {
+        const get = (field) => {
+          const el = card.querySelector(`[data-field="${field}"]`);
+          return el ? el.value.trim() : '';
+        };
+        return {
+          tipoDocumento: get('tipoDocumento'),
+          documento: get('documento'),
+          nombres: get('nombres').toUpperCase(),
+          paterno: get('paterno').toUpperCase(),
+          materno: get('materno').toUpperCase(),
+          sexo: get('sexo'),
+          nacimiento: get('nacimiento'),
+          precioVenta: asientos[i].price,
+          email: i === 0 ? get('email').toLowerCase() : (booking.pasajeros && booking.pasajeros[0] && booking.pasajeros[0].email) || '',
+          telefono: i === 0 ? get('telefono') : ''
+        };
+      });
+
+      saveBooking({ pasajeros, contacto: { email: pasajeros[0].email } });
+      window.location.href = '10-11.html';
+    });
+  </script>
+</body></html>
