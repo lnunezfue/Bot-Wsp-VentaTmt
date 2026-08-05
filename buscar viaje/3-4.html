@@ -91,19 +91,20 @@
 <div class="app-shell">
   
   <!-- BEGIN: WhatsApp Browser Header -->
-  <header class="sticky top-0 z-50 bg-[#121b22] border-b border-gray-800 px-4 py-2 flex items-center justify-between" data-purpose="whatsapp-header">
-    <div class="flex items-center gap-4">
-      <a class="text-sm font-medium" data-nav="back" href="1-2-corregir.html">OK</a>
-      <div class="flex flex-col items-center">
-        <span class="text-xs font-bold leading-none">WhatsApp</span>
-        <span class="text-[10px] text-gray-400 flex items-center gap-1">
-          <svg class="h-2 w-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path>
-          </svg>
-          webtestcomercial.jelaf.com
-        </span>
-      </div>
+  <header class="sticky top-0 z-50 bg-[#121b22] border-b border-gray-800 px-4 py-2 grid grid-cols-[32px_1fr_32px] items-center" data-purpose="whatsapp-header">
+    <a class="text-white" data-nav="back" href="1-2-corregir.html" aria-label="Volver">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+    </a>
+    <div class="flex flex-col items-center">
+      <span class="text-xs font-bold leading-none">WhatsApp</span>
+      <span class="text-[10px] text-gray-400 flex items-center gap-1">
+        <svg class="h-2 w-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path>
+        </svg>
+        webtestcomercial.jelaf.com
+      </span>
     </div>
+    <div></div>
   </header>
   <!-- END: WhatsApp Browser Header -->
   
@@ -239,16 +240,39 @@
       document.getElementById('route-subtitle').textContent = 'Selecciona una opción para continuar';
     }
 
+    // Suma/resta días a una fecha ISO (AAAA-MM-DD) sin líos de zona horaria.
+    function sumarDias(iso, n) {
+      const d = new Date(`${iso}T00:00:00`);
+      d.setDate(d.getDate() + n);
+      return d.toISOString().slice(0, 10);
+    }
+
     function renderDateSelector() {
       dateSelector.innerHTML = '';
-      const { dia, etiqueta } = fechaLabel(booking.busqueda.fecha);
-      const chip = document.createElement('div');
-      chip.className = `flex-shrink-0 w-[80px] h-[64px] rounded-custom flex flex-col items-center justify-center cursor-pointer transition-colors border-2 border-whatsapp bg-whatsapp/10`;
-      chip.innerHTML = `
-        <span class="text-lg font-bold leading-tight text-white">${dia}</span>
-        <span class="text-[10px] uppercase text-whatsapp">${etiqueta}</span>
-      `;
-      dateSelector.appendChild(chip);
+
+      const hoyISO = new Date().toISOString().slice(0, 10);
+      const fechaElegida = booking.busqueda.fecha;
+
+      // 2 días antes + la elegida + 2 días después, sin mostrar fechas pasadas.
+      let fechas = [-2, -1, 0, 1, 2].map(n => sumarDias(fechaElegida, n)).filter(f => f >= hoyISO);
+      while (fechas.length < 5) fechas.push(sumarDias(fechas[fechas.length - 1], 1));
+
+      fechas.forEach(fechaISO => {
+        const { dia, etiqueta } = fechaLabel(fechaISO);
+        const activa = fechaISO === fechaElegida;
+        const chip = document.createElement('div');
+        chip.className = `flex-shrink-0 w-[80px] h-[64px] rounded-custom flex flex-col items-center justify-center cursor-pointer transition-colors ${activa ? 'border-2 border-whatsapp bg-whatsapp/10' : 'bg-surface-container text-gray-400'}`;
+        chip.innerHTML = `
+          <span class="text-lg font-bold leading-tight ${activa ? 'text-white' : ''}">${dia}</span>
+          <span class="text-[10px] uppercase ${activa ? 'text-whatsapp' : ''}">${etiqueta}</span>
+        `;
+        chip.addEventListener('click', () => {
+          if (fechaISO === booking.busqueda.fecha) return;
+          booking = saveBooking({ busqueda: Object.assign({}, booking.busqueda, { fecha: fechaISO }) });
+          buscarViajes();
+        });
+        dateSelector.appendChild(chip);
+      });
     }
 
     function renderServicios() {
@@ -336,6 +360,8 @@
       const viajeElegido = resultados[selectedIndex];
 
       const viajeSeleccionadoParaPlano = {
+        id_programacion: viajeElegido.id_programacion,
+        nro_viaje: viajeElegido.nro_viaje,
         codi_empresa: viajeElegido.codi_empresa,
         codi_origen: viajeElegido.codi_origen,
         codi_destino: viajeElegido.codi_destino,
@@ -346,8 +372,7 @@
         fecha_viaje: booking.busqueda.fecha, 
         hora_viaje: viajeElegido.hora_partida,
         placa_bus: viajeElegido.placa,
-        precio_base: viajeElegido.precio_base, // El precio base que llega del JSON
-        id_programacion: viajeElegido.id_programacion 
+        precio_base: viajeElegido.precio_base // El precio base que llega del JSON
       };
 
       saveBooking({ viajeSeleccionado: viajeSeleccionadoParaPlano });

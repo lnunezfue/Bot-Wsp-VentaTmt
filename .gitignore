@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+boletos_generados/
+.venv/
+venv/

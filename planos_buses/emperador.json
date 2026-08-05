@@ -1,0 +1,859 @@
+{
+  "plantillas": {
+    "020-40": {
+      "servicio": "EMPERADOR",
+      "pisos": {
+        "1": {
+          "rows": [
+            [
+              {
+                "type": "seat",
+                "id": "51",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "54",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "57",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "60",
+                "angle": "160"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "03",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "07",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "11",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "15",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "19",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "23",
+                "angle": "145"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "tv"
+              },
+              {
+                "type": "seat",
+                "id": "04",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "08",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "12",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "16",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "20",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "24",
+                "angle": "145"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "tv"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "50",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "53",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "56",
+                "angle": "160"
+              },
+              {
+                "type": "tv"
+              },
+              {
+                "type": "seat",
+                "id": "02",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "06",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "10",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "14",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "18",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "22",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "26",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "28",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "30",
+                "angle": "145"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "49",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "52",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "55",
+                "angle": "160"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "01",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "05",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "09",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "13",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "17",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "21",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "25",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "27",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "29",
+                "angle": "145"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "013-40": {
+      "servicio": "EMPERADOR",
+      "pisos": {
+        "1": {
+          "rows": [
+            [
+              {
+                "type": "seat",
+                "id": "51",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "54",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "57",
+                "angle": "160"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "03",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "07",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "11",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "15",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "19",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "23",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "27",
+                "angle": "145"
+              },
+              {
+                "type": "bath"
+              }
+            ],
+            [
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "04",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "08",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "12",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "16",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "20",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "24",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "28",
+                "angle": "145"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "tv"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "tv"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "tv"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "50",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "53",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "56",
+                "angle": "160"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "02",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "06",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "10",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "14",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "18",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "22",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "26",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "30",
+                "angle": "145"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "49",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "52",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "55",
+                "angle": "160"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "01",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "05",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "09",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "13",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "17",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "21",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "25",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "29",
+                "angle": "145"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "021-38": {
+      "servicio": "EMPERADOR",
+      "pisos": {
+        "1": {
+          "rows": [
+            [
+              {
+                "type": "seat",
+                "id": "33",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "36",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "39",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "40",
+                "angle": "160"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "03",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "07",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "11",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "15",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "19",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "23",
+                "angle": "145"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "04",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "08",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "12",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "16",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "20",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "24",
+                "angle": "145"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "tv"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "tv"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "32",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "35",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "38",
+                "angle": "160"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "02",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "06",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "10",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "14",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "18",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "22",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "26",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "28",
+                "angle": "145"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "31",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "34",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "37",
+                "angle": "160"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "seat",
+                "id": "01",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "05",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "09",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "13",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "17",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "21",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "25",
+                "angle": "145"
+              },
+              {
+                "type": "seat",
+                "id": "27",
+                "angle": "145"
+              }
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "placas": {
+    "C0A967": "013-40",
+    "C0A969": "013-40",
+    "C0B959": "013-40",
+    "C6H958": "020-40",
+    "C6H959": "020-40",
+    "C9J957": "021-38",
+    "C9J967": "021-38"
+  }
+}

@@ -67,16 +67,17 @@
   <div class="app-shell">
     
     <!-- BEGIN: WebviewHeader -->
-    <header class="sticky top-0 z-20 bg-[#202c33] px-4 py-2 flex items-center justify-between text-gray-300 text-sm border-b border-gray-700/30">
-      <div class="flex items-center gap-4">
-        <a class="font-medium text-white" data-nav="back" href="../buscar%20viaje/3-4.html">OK</a>
-        <div class="flex flex-col">
-          <span class="text-[10px] text-gray-400 flex items-center gap-1">
-            <svg class="w-2.5 h-2.5" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path></svg>
-            webtestcomercial.jelaf.com
-          </span>
-        </div>
+    <header class="sticky top-0 z-20 bg-[#202c33] px-4 py-2 grid grid-cols-[28px_1fr_28px] items-center text-gray-300 text-sm border-b border-gray-700/30">
+      <a class="text-white" data-nav="back" href="../buscar%20viaje/3-4.html" id="btn-volver" aria-label="Volver">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+      </a>
+      <div class="flex flex-col items-center">
+        <span class="text-[10px] text-gray-400 flex items-center gap-1">
+          <svg class="w-2.5 h-2.5" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path></svg>
+          webtestcomercial.jelaf.com
+        </span>
       </div>
+      <div></div>
     </header>
     <!-- END: WebviewHeader -->
     
@@ -171,7 +172,9 @@
       const vertical = [];
       for (let c = 0; c < numCols; c++) {
         const filaVertical = [];
-        for (let r = 0; r < rows.length; r++) {
+        // Igual que en preview-planos: se recorre de abajo hacia arriba
+        // (r invertido) para reflejar izquierda<->derecha.
+        for (let r = rows.length - 1; r >= 0; r--) {
           filaVertical.push(rows[r][c] || { type: 'empty' });
         }
         vertical.push(filaVertical);
@@ -197,7 +200,8 @@
     const ICONS = {
       tv: `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`,
       exit: `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`,
-      stairs: `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`
+      stairs: `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`,
+      bath: `<svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="m19,9.393v-5.393h1.5c.276,0,.5-.224.5-.5s-.224-.5-.5-.5h-1.536c-.243-1.694-1.704-3-3.464-3h-7c-1.93,0-3.5,1.57-3.5,3.5v5.893c-1.17.64-2,1.68-2,2.607,0,2.346,2.178,6.076,6.961,6.843-.273,1.133-1.888,1.157-1.961,1.157-1.103,0-2,.897-2,2s.897,2,2,2h8c1.103,0,2-.897,2-2s-.897-2-2-2c-.075,0-1.691-.014-1.961-1.157,4.784-.766,6.961-4.112,6.961-6.843,0-.927-.83-1.966-2-2.607ZM6,3.5c0-1.379,1.121-2.5,2.5-2.5h7c1.379,0,2.5,1.121,2.5,2.5v5.5H6V3.5Zm10,17.5c.552,0,1,.448,1,1s-.448,1-1,1h-8c-.552,0-1-.448-1-1s.448-1,1-1c.952,0,2.682-.44,2.961-2.04.335.026.681.04,1.039.04s.704-.014,1.039-.04c.279,1.6,2.009,2.04,2.961,2.04Zm-4-3c-4.34,0-6.802-2.121-7.655-4.21,1.465.784,4.085,1.21,7.655,1.21,3.345,0,5.998-.196,7.534-.936-.951,1.997-3.384,3.936-7.534,3.936Zm0-4c-5.869,0-8-1.196-8-2,0-.535.791-1.541,2.084-2h11.832c1.293.459,2.084,1.465,2.084,2,0,1.402-2.393,2-8,2Z"/></svg>`
     };
 
     function updateSummary() {
@@ -219,20 +223,76 @@
       }
     }
 
-    function toggleSeat(floor, id, price) {
+    // Evita doble clic mientras hay una petición de bloqueo/liberación en vuelo.
+    let procesandoAsiento = false;
+
+    async function liberarAsientoEnJelaf(idBloqueo) {
+      if (!idBloqueo) return;
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/liberar-asiento`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_bloqueo: idBloqueo })
+        });
+      } catch (err) {
+        console.error('No se pudo liberar el asiento en JELAF:', err);
+      }
+    }
+
+    async function toggleSeat(floor, id, price) {
+      if (procesandoAsiento) return;
       const index = selectedSeats.findIndex(s => s.id === id && s.floor === floor);
+
+      // --- Deseleccionar: libera el bloqueo que ya tenía ese asiento ---
       if (index > -1) {
+        const asiento = selectedSeats[index];
         selectedSeats.splice(index, 1);
-      } else {
-        // Bloqueo de 5 pasajes máximo
-        if(selectedSeats.length >= 5) {
-          alert("Puedes seleccionar un máximo de 5 asientos por compra.");
+        renderFloor();
+        updateSummary();
+
+        procesandoAsiento = true;
+        await liberarAsientoEnJelaf(asiento.idBloqueo);
+        procesandoAsiento = false;
+        return;
+      }
+
+      // --- Bloqueo de 5 pasajes máximo ---
+      if (selectedSeats.length >= 5) {
+        alert("Puedes seleccionar un máximo de 5 asientos por compra.");
+        return;
+      }
+
+      // --- Seleccionar: bloquea el asiento en JELAF antes de dejarlo elegido ---
+      const v = booking.viajeSeleccionado;
+      procesandoAsiento = true;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/bloquear-asiento`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codi_programacion: v.id_programacion,
+            nro_viaje: v.nro_viaje,
+            codi_origen: String(v.codi_origen),
+            codi_destino: String(v.codi_destino),
+            numero_asiento: id,
+            fecha_viaje: booking.busqueda.fecha,
+            precio: price
+          })
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          alert(body.detail || 'No se pudo bloquear el asiento (puede que ya lo haya tomado otro cliente).');
+          await cargarPlano(); // refresca el plano para reflejar el estado real
           return;
         }
-        selectedSeats.push({ floor, id, price });
+        selectedSeats.push({ floor, id, price, idBloqueo: body.id_bloqueo });
+        renderFloor();
+        updateSummary();
+      } catch (err) {
+        alert('No se pudo conectar con el servidor para bloquear el asiento.');
+      } finally {
+        procesandoAsiento = false;
       }
-      renderFloor();
-      updateSummary();
     }
 
     function renderFloor() {
@@ -338,6 +398,15 @@
       if (selectedSeats.length === 0) return;
       saveBooking({ asientos: selectedSeats });
       window.location.href = '../rellenar%20datos/8-9.html';
+    });
+
+    // Si el usuario se arrepiente y vuelve atrás, liberamos los asientos
+    // que ya había bloqueado para que no queden atascados para otros.
+    document.getElementById('btn-volver').addEventListener('click', (e) => {
+      e.preventDefault();
+      const destino = e.currentTarget.href;
+      Promise.all(selectedSeats.map(a => liberarAsientoEnJelaf(a.idBloqueo)))
+        .finally(() => { window.location.href = destino; });
     });
 
     cargarPlano();

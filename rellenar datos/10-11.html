@@ -72,7 +72,9 @@
 <!-- BEGIN: TopNavigationBar -->
 <header class="sticky top-0 z-50 bg-[#121b22] border-b border-gray-800 px-4 py-3 flex items-center justify-between" data-purpose="whatsapp-simulated-nav">
 <div class="flex items-center gap-4">
-<a class="text-brand font-medium text-lg" data-nav="back" href="8-9.html">Atrás</a>
+<a class="text-brand" data-nav="back" href="8-9.html" aria-label="Volver">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</a>
 </div>
 <div class="text-center">
 <p class="text-[10px] text-gray-400 uppercase tracking-tighter">webtestcomercial.jelaf.com</p>
@@ -135,6 +137,24 @@
       Continuar al pago
     </button>
 </footer>
+<!-- BEGIN: MenorEdadModal -->
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/70 backdrop-blur-sm px-6" data-purpose="minor-warning-modal" id="modal-menor-edad">
+<div class="w-full max-w-sm bg-surface-container-low border border-white/10 rounded-vibe p-6 text-center shadow-2xl">
+<h3 class="text-base font-bold text-white mb-3">Aviso Importante</h3>
+<p class="text-sm text-gray-400 leading-relaxed mb-6">
+      Los pasajeros menores de 18 años deben viajar acompañados por un adulto o contar con la autorización de viaje correspondiente. Por favor, confirma que cumples con este requisito antes de continuar.
+    </p>
+<div class="space-y-3">
+<button class="w-full bg-brand text-surface font-black py-3 rounded-vibe uppercase tracking-wider text-sm active:scale-[0.98] transition-transform" id="btn-confirmar-menor">
+        Confirmar y continuar
+      </button>
+<button class="w-full bg-transparent text-gray-400 font-semibold py-2 text-xs uppercase tracking-wide" id="btn-volver-menor">
+        Volver y modificar
+      </button>
+</div>
+</div>
+</div>
+<!-- END: MenorEdadModal -->
 <script>
     // --- Backend real (api_ventas.py) ---
     const API_BASE_URL = 'http://localhost:8000';
@@ -195,7 +215,27 @@
     chkTerminos.addEventListener('change', refreshContinueState);
     refreshContinueState();
 
-    btnContinuar.addEventListener('click', async () => {
+    const modalMenorEdad = document.getElementById('modal-menor-edad');
+    const btnConfirmarMenor = document.getElementById('btn-confirmar-menor');
+    const btnVolverMenor = document.getElementById('btn-volver-menor');
+
+    btnContinuar.addEventListener('click', () => {
+      modalMenorEdad.classList.remove('hidden');
+      modalMenorEdad.classList.add('flex');
+    });
+
+    btnVolverMenor.addEventListener('click', () => {
+      modalMenorEdad.classList.add('hidden');
+      modalMenorEdad.classList.remove('flex');
+    });
+
+    btnConfirmarMenor.addEventListener('click', () => {
+      modalMenorEdad.classList.add('hidden');
+      modalMenorEdad.classList.remove('flex');
+      procederAlPago();
+    });
+
+    async function procederAlPago() {
       btnContinuar.disabled = true;
       btnContinuar.textContent = 'Verificando disponibilidad...';
       checkoutError.classList.add('hidden');
@@ -236,6 +276,6 @@
         btnContinuar.disabled = false;
         btnContinuar.textContent = 'Continuar al pago';
       }
-    });
+    }
 </script>
 </body></html>
