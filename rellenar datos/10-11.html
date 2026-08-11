@@ -119,7 +119,7 @@
 </div>
 <label class="flex items-center gap-3 cursor-pointer pt-2">
 <input class="w-5 h-5 bg-surface-container border-none rounded text-brand focus:ring-brand focus:ring-offset-0" id="chk-terminos" type="checkbox"/>
-<span class="text-xs text-gray-400 leading-tight">He leído y acepto los <span class="text-white font-semibold">Términos y Condiciones</span> y la <span class="text-white font-semibold">Política de Privacidad</span></span>
+<span class="text-xs text-gray-400 leading-tight">He leído y acepto los <button class="text-white font-semibold underline underline-offset-2" id="link-terminos" type="button">Términos y Condiciones</button> y la <span class="text-white font-semibold">Política de Privacidad</span></span>
 </label>
 </div>
 </section>
@@ -155,6 +155,78 @@
 </div>
 </div>
 <!-- END: MenorEdadModal -->
+<!-- BEGIN: TerminosModal -->
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/70 backdrop-blur-sm px-4" data-purpose="terms-modal" id="modal-terminos">
+<div class="w-full max-w-sm bg-surface-container-low border border-white/10 rounded-vibe shadow-2xl flex flex-col" style="max-height: 85vh;">
+<div class="flex items-center justify-between p-5 pb-3 border-b border-white/10 shrink-0">
+<h3 class="text-sm font-bold text-white">Términos y Condiciones</h3>
+<button aria-label="Cerrar" class="text-gray-400 hover:text-white text-xl leading-none px-1" id="btn-cerrar-terminos" type="button">×</button>
+</div>
+<div class="overflow-y-auto px-5 py-4 space-y-5" id="terminos-scroll-body">
+<p class="text-xs text-gray-400 leading-relaxed">
+        Resumen de las condiciones del <span class="text-white font-semibold">Contrato de Transporte de Pasajeros de Transportes Moquegua Turismo S.R.L.</span> Al comprar tu boleto, aceptas estas condiciones. El texto legal completo está disponible en <a class="text-brand underline" href="https://transportesmoquegua.com/" rel="noopener" target="_blank">transportesmoquegua.com</a>.
+      </p>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Compra y datos del pasajero</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Verifica tus datos (nombres, documento, fecha de nacimiento, ruta, asiento, fecha y comprobante) antes de confirmar. <span class="text-white">Una vez emitido el boleto, no hay devolución</span> por errores de registro.</li>
+<li>Si compras por WhatsApp: no pagues sin confirmar disponibilidad de asientos, y envía la captura del pago dentro de los 5 minutos después de separar tu asiento.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Cambios y postergaciones</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Solo puede tramitarlos el titular del boleto, de forma <span class="text-white">presencial</span>, hasta 4 horas antes del viaje, presentando DNI y boleto.</li>
+<li>Excepcionalmente, por fuerza mayor, puedes solicitar la postergación por WhatsApp al <span class="text-white">953 954 708</span> (5:00 a. m. – 11:00 p. m.), dentro del mismo plazo de 4 horas.</li>
+<li>Pasado el plazo se aplican penalidades (20% a 50% del costo del boleto según cuánto te excedas).</li>
+<li>La postergación sin costo solo aplica dentro del plazo; cambios de titularidad, ruta u horario tienen un costo adicional.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Devoluciones</h4>
+<p class="text-xs text-gray-400 leading-relaxed">Solo se devuelve el costo del boleto si la empresa anula el servicio o te reubica en otro servicio y no aceptas la reubicación.</p>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Seguro y boleto físico</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Viajas con Seguro Obligatorio de Accidentes de Tránsito (SOAT) de MAPFRE Perú.</li>
+<li>Si pierdes tu boleto, puedes pedir reimpresión en el punto de embarque (llega 30 min antes); desde la segunda reimpresión hay un costo adicional.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Embarque y documentos</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Preséntate <span class="text-white">30 minutos antes</span> con tu boleto y documento de identidad físico; si no llegas a tiempo, pierdes el boleto y el asiento se libera.</li>
+<li>Menores de edad que viajan solos necesitan autorización notarial. Gestantes desde 8 meses necesitan certificado médico de viaje.</li>
+<li>No se permite embarcar bajo efectos de alcohol/drogas, sin documentos completos, o si tu condición de salud impide viajar sin acompañante.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Equipaje</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Equipaje de mano: hasta 8 kg (bolso o maletín pequeño).</li>
+<li>Equipaje de bodega: hasta 20 kg sin costo (2 piezas); el exceso se cobra según tarifario.</li>
+<li>No se permiten armas, sustancias peligrosas ni artículos punzocortantes. La empresa no responde por objetos de valor no declarados ni por equipaje mal embalado.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Mascotas</h4>
+<p class="text-xs text-gray-400 leading-relaxed">Se permite el transporte de mascotas en bodega dentro de un kennel adecuado, bajo tu responsabilidad. Los perros guía o de asistencia emocional acreditados por CONADIS viajan en la cabina, en asiento contiguo a la ventana, con la documentación correspondiente.</p>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Casos de fuerza mayor</h4>
+<p class="text-xs text-gray-400 leading-relaxed">Ante desastres naturales, bloqueos de vía u órdenes de autoridad, el viaje puede interrumpirse o suspenderse. Tu boleto queda con fecha abierta o puedes transferirlo a otra persona; la empresa no responde por demoras ajenas a su control.</p>
+</div>
+</div>
+<div class="p-5 pt-4 border-t border-white/10 shrink-0">
+<p class="text-[10px] text-gray-500 text-center mb-3 hidden" id="terminos-scroll-hint">Desplázate hasta el final para poder aceptar</p>
+<button class="w-full bg-brand text-surface font-black py-3 rounded-vibe uppercase tracking-wider text-sm shadow-lg active:scale-[0.98] transition-transform disabled:opacity-50" disabled="" id="btn-aceptar-terminos">
+        He leído y acepto
+      </button>
+</div>
+</div>
+</div>
+<!-- END: TerminosModal -->
 <script>
     // --- Backend real (api_ventas.py) ---
     const API_BASE_URL = 'https://dinner-dancing-tyke.ngrok-free.dev';
@@ -214,6 +286,45 @@
     }
     chkTerminos.addEventListener('change', refreshContinueState);
     refreshContinueState();
+
+    const modalTerminos = document.getElementById('modal-terminos');
+    const linkTerminos = document.getElementById('link-terminos');
+    const btnCerrarTerminos = document.getElementById('btn-cerrar-terminos');
+    const btnAceptarTerminos = document.getElementById('btn-aceptar-terminos');
+    const terminosScrollBody = document.getElementById('terminos-scroll-body');
+    const terminosScrollHint = document.getElementById('terminos-scroll-hint');
+
+    function abrirModalTerminos() {
+      modalTerminos.classList.remove('hidden');
+      modalTerminos.classList.add('flex');
+      terminosScrollBody.scrollTop = 0;
+      btnAceptarTerminos.disabled = true;
+      terminosScrollHint.classList.remove('hidden');
+    }
+
+    function cerrarModalTerminos() {
+      modalTerminos.classList.add('hidden');
+      modalTerminos.classList.remove('flex');
+    }
+
+    function checkTerminosScroll() {
+      const { scrollTop, scrollHeight, clientHeight } = terminosScrollBody;
+      const llegoAlFinal = scrollTop + clientHeight >= scrollHeight - 16;
+      if (llegoAlFinal) {
+        btnAceptarTerminos.disabled = false;
+        terminosScrollHint.classList.add('hidden');
+      }
+    }
+
+    linkTerminos.addEventListener('click', abrirModalTerminos);
+    btnCerrarTerminos.addEventListener('click', cerrarModalTerminos);
+    terminosScrollBody.addEventListener('scroll', checkTerminosScroll);
+
+    btnAceptarTerminos.addEventListener('click', () => {
+      chkTerminos.checked = true;
+      refreshContinueState();
+      cerrarModalTerminos();
+    });
 
     const modalMenorEdad = document.getElementById('modal-menor-edad');
     const btnConfirmarMenor = document.getElementById('btn-confirmar-menor');
