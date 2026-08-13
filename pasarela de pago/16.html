@@ -3,82 +3,55 @@
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>Confirmando Pago - Vibe Transit</title>
+  <title>Checkout Seguro - Transportes Moquegua</title>
   
-  <!-- Tailwind CSS CDN -->
+  <!-- ETIQUETAS OPEN GRAPH (El truco para que WhatsApp cree la tarjeta visual) -->
+  <meta property="og:title" content="🎫 Compra tu pasaje - Transportes Moquegua">
+  <meta property="og:description" content="Elige tu ruta y fecha para encontrar el viaje que necesitas. Rápido, seguro y sin filas. 📍📅">
+  <meta property="og:type" content="website">
+  
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <!-- Google Fonts: Hanken Grotesk -->
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet"/>
   
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Hanken Grotesk', 'sans-serif'],
-          },
+          fontFamily: { sans: ['Hanken Grotesk', 'sans-serif'] },
           colors: {
-            whatsapp: {
-              green: '#25d366',
-              dark: '#0b141b',
+            vibe: {
+              bg: '#0b141b',
+              surface: '#121b22',
               card: '#1d272f',
-              header: '#202c33',
+              green: '#25d366',
+              yupi: '#FF4C00', 
+            },
+            whatsapp: {
+              header: '#202c33' /* Color extraído del diseño de tu compañero */
             }
           }
         }
       }
     }
   </script>
-  <style data-purpose="custom-layout">
-    body {
-      background-color: #0b141b;
-      color: white;
-      margin: 0;
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-    }
-    .app-shell {
-      max-width: 500px;
-      margin: 0 auto;
-      width: 100%;
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .bg-overlay {
-      background-color: #0b141b;
-      position: relative;
-      height: 100%;
-      width: 100%;
-      z-index: 0;
-    }
-
-    .loader {
-      border: 4px solid rgba(37, 211, 102, 0.1);
-      border-top: 4px solid #25d366;
-      border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+  
+  <style>
+    body { background-color: #0b141b; color: white; margin: 0; min-height: 100vh; }
+    .app-shell { max-width: 500px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+    .loader { border: 3px solid rgba(255, 76, 0, 0.2); border-top: 3px solid #FF4C00; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
+
+  <!-- SCRIPT OFICIAL YUPY -->
+  <script src="https://checkout.yupy.us/v1/yupy-checkout.js"></script>
 </head>
-<body class="font-sans">
+<body class="font-sans antialiased">
 <div class="app-shell">
   
-  <!-- BEGIN: WhatsApp WebView Header -->
-  <header class="bg-whatsapp-header px-4 py-3 flex items-center justify-between border-b border-gray-700 z-50" data-purpose="webview-header">
+  <!-- BEGIN: WhatsApp WebView Header (De tu compañero) -->
+  <header class="bg-whatsapp-header px-4 py-3 flex items-center justify-between border-b border-gray-700 z-50">
     <div class="flex items-center space-x-4">
       <span class="text-white opacity-40">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
@@ -86,7 +59,7 @@
     </div>
     <div class="flex flex-col items-center flex-grow">
       <span class="text-xs text-gray-400 font-medium">WhatsApp</span>
-      <span class="text-[10px] text-gray-500">webtestcomercial.jelaf.com</span>
+      <span class="text-[10px] text-gray-500">www.transportesmoquegua.com</span>
     </div>
     <div class="flex items-center">
       <svg fill="white" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
@@ -97,39 +70,111 @@
     </div>
   </header>
   <!-- END: WhatsApp WebView Header -->
+
+  <!-- Tu diseño y lógica actual -->
+  <header class="bg-vibe-surface px-4 py-3 flex items-center justify-between border-b border-gray-800">
+    <a href="#" id="btn-back" class="text-vibe-green text-sm font-bold flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      Atrás
+    </a>
+    <span class="text-xs text-gray-400 uppercase tracking-widest font-bold">Pago Seguro</span>
+    <div class="w-16"></div>
+  </header>
   
-  <!-- BEGIN: Main Content Area -->
-  <main class="relative flex-grow flex items-center justify-center p-6 bg-overlay" data-purpose="main-loading-screen">
-    <!-- BEGIN: Loading Card -->
-    <section class="relative z-10 w-full max-w-sm bg-whatsapp-card rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl border border-gray-800" data-purpose="status-card">
-      <div class="mb-6">
-        <div class="loader"></div>
+  <main class="flex-grow p-4 flex flex-col gap-4">
+    
+    <!-- Resumen del Pedido -->
+    <section class="bg-vibe-card rounded-2xl p-5 border border-gray-800 shadow-xl">
+      <div class="flex justify-between items-end mb-3">
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total a pagar</p>
+          <p class="text-3xl font-extrabold text-white" id="monto-total">S/ 0.00</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] text-gray-500 uppercase">Nro. Pedido</p>
+          <p class="text-sm font-mono text-gray-300" id="nro-pedido">YP-0000</p>
+        </div>
       </div>
-      <h1 class="text-white text-xl font-bold mb-3 tracking-tight">
-        Confirmando tu pago
-      </h1>
-      <p class="text-gray-400 text-sm leading-relaxed mb-6" id="status-text">
-        Estamos procesando la respuesta de Niubiz.
-      </p>
-      <span class="text-gray-500 text-xs font-medium" id="pedido-ref">
-        Pedido 000000000
-      </span>
-      <button class="mt-5 w-full bg-whatsapp-green text-whatsapp-dark font-bold py-3 rounded-xl hidden" id="btn-retry">
-        Reintentar
-      </button>
+      <p class="text-xs text-gray-400" id="ruta-resumen">Cargando ruta...</p>
     </section>
-    <!-- END: Loading Card -->
+
+    <!-- Contenedor Maestro de Pago -->
+    <section class="bg-vibe-surface rounded-2xl p-5 border border-gray-800 flex-grow flex flex-col relative overflow-hidden">
+        
+        <div class="flex items-center gap-2 mb-4 justify-center">
+            <div class="w-6 h-6 rounded bg-vibe-yupi flex items-center justify-center font-black text-white text-[10px]">Y!</div>
+            <h3 class="font-bold text-sm text-gray-300">Checkout Yupy</h3>
+        </div>
+
+        <!-- 1. Estado de Carga -->
+        <div id="loading-state" class="absolute inset-0 z-20 bg-vibe-surface flex flex-col items-center justify-center transition-opacity duration-300 mt-12">
+            <div class="loader mb-4"></div>
+            <p class="text-sm font-bold text-gray-300" id="loading-text">Conectando con Yupy...</p>
+        </div>
+
+        <!-- 2. Contenedor Oficial YUPY -->
+        <div id="yupy-payment" class="w-full flex-grow min-h-[400px]"></div>
+
+        <!-- 3. PLAN B: Interfaz Demo -->
+        <div id="demo-ui-container" class="hidden flex-grow flex-col items-center w-full">
+            
+            <div class="flex w-full bg-[#0b141b] rounded-lg p-1 mb-5" id="tabs-container">
+                <button id="tab-tarjeta" class="flex-1 py-2 text-xs font-bold bg-gray-700 text-white rounded shadow transition-all">💳 Tarjeta</button>
+                <button id="tab-qr" class="flex-1 py-2 text-xs font-bold text-gray-500 rounded transition-all">📱 Yape / Plin</button>
+            </div>
+
+            <!-- VISTA TARJETA -->
+            <div id="view-tarjeta" class="w-full flex flex-col gap-4">
+                <div>
+                    <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Número de Tarjeta</label>
+                    <input type="text" id="cc-number" class="w-full bg-[#121b22] border border-gray-700 text-white p-3 rounded-lg font-mono tracking-widest focus:border-[#FF4C00] outline-none transition-colors" placeholder="0000 0000 0000 0000" maxlength="19">
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Vencimiento</label>
+                        <input type="text" id="cc-exp" class="w-full bg-[#121b22] border border-gray-700 text-white p-3 rounded-lg font-mono focus:border-[#FF4C00] outline-none transition-colors" placeholder="MM/YY" maxlength="5">
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">CVV</label>
+                        <input type="password" id="cc-cvv" class="w-full bg-[#121b22] border border-gray-700 text-white p-3 rounded-lg font-mono focus:border-[#FF4C00] outline-none transition-colors" placeholder="123" maxlength="4">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Titular de la tarjeta</label>
+                    <input type="text" id="cc-name" class="w-full bg-[#121b22] border border-gray-700 text-white p-3 rounded-lg uppercase focus:border-[#FF4C00] outline-none transition-colors" placeholder="NOMBRE APELLIDO">
+                </div>
+                
+                <button id="btn-pagar-tarjeta" class="mt-4 bg-vibe-yupi text-white font-bold py-3 px-8 rounded-xl shadow-lg active:scale-95 transition-transform w-full">
+                    Pagar S/ <span class="btn-monto">0.00</span>
+                </button>
+            </div>
+
+            <!-- VISTA QR -->
+            <div id="view-qr" class="w-full hidden flex-col items-center text-center">
+                <p class="text-xs text-gray-400 mb-4">Escanea el código QR desde tu app bancaria.</p>
+                <div class="bg-white p-2 rounded-xl mb-4 relative cursor-pointer" id="btn-simular-scan" title="Clic para simular pago">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=DemoYupySandbox" alt="QR Yupy" class="w-40 h-40">
+                </div>
+                <div class="flex gap-4 mb-4">
+                    <img src="https://seeklogo.com/images/Y/yape-logo-3E473EE7E5-seeklogo.com.png" class="h-6 rounded bg-white p-1">
+                    <img src="https://seeklogo.com/images/P/plin-logo-2782A0F8F1-seeklogo.com.png" class="h-6 rounded bg-white p-1">
+                </div>
+                <p class="text-[10px] text-gray-500 flex items-center justify-center gap-1">
+                    <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-vibe-yupi opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-vibe-yupi"></span></span>
+                    Esperando pago... (Haz clic en el QR)
+                </p>
+            </div>
+        </div>
+        
+    </section>
+
   </main>
-  <!-- END: Main Content Area -->
-  
 </div>
 
 <script>
-    // --- Backend real (api_ventas.py) ---
-    const API_BASE_URL = 'http://localhost:8000';
-
-    // --- Estado compartido del flujo de compra (localStorage) ---
+    const API_BASE_URL = 'https://dinner-dancing-tyke.ngrok-free.dev';
     const STORAGE_KEY = 'vibeTransitBooking';
+
     function loadBooking() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
     }
@@ -140,90 +185,196 @@
     }
 
     const booking = loadBooking();
-    
-    // 🛠️ CORRECCIÓN 1: Leer viajeSeleccionado
-    if (!booking.viajeSeleccionado || !booking.asientos || !booking.pasajeros) {
+    if (!booking.viajeSeleccionado || !booking.pasajeros) {
       window.location.href = '../buscar%20viaje/1-2-corregir.html';
     }
 
-    const pedido = booking.pago && booking.pago.referenciaOperacion
-      ? booking.pago.referenciaOperacion
-      : String(Math.floor(100000000 + Math.random() * 900000000));
+    const total = Number(booking.montoTotal) || 0;
+    const nroPedido = `YP-${Math.floor(100000 + Math.random() * 900000)}`;
+    
+    document.getElementById('monto-total').textContent = `S/ ${total.toFixed(2)}`;
+    document.querySelectorAll('.btn-monto').forEach(el => el.textContent = total.toFixed(2));
+    document.getElementById('ruta-resumen').textContent = `${booking.busqueda.origen} a ${booking.busqueda.destino} | ${booking.pasajeros.length} Boleto(s)`;
+    document.getElementById('nro-pedido').textContent = nroPedido;
 
-    document.getElementById('pedido-ref').textContent = `Pedido ${pedido}`;
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.back();
+    });
 
-    const loader = document.querySelector('.loader');
-    const statusText = document.getElementById('status-text');
-    const btnRetry = document.getElementById('btn-retry');
+    // --- LÓGICA DE INICIALIZACIÓN HÍBRIDA ---
+    async function iniciarPasarela() {
+        const loadingState = document.getElementById('loading-state');
+        const loadingText = document.getElementById('loading-text');
 
-    // Simula el tiempo de espera de Niubiz y luego confirma la compra
-    async function confirmarCompra() {
-      loader.classList.remove('hidden');
-      btnRetry.classList.add('hidden');
-      statusText.textContent = 'Estamos procesando la respuesta de Niubiz.';
-      statusText.classList.remove('text-red-400');
+        try {
+            const nombreCliente = booking.pasajeros[0] ? `${booking.pasajeros[0].nombres} ${booking.pasajeros[0].paterno}` : "Cliente";
+            
+            const reqBackend = await fetch(`${API_BASE_URL}/api/v1/generar-checkout-yupi`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ monto: total, pedido: nroPedido, nombre_comprador: nombreCliente })
+            });
+            
+            if (!reqBackend.ok) {
+                const errorData = await reqBackend.json();
+                throw new Error(errorData.detail || "Fallo de comunicación con el servidor.");
+            }
+            
+            const dataYupy = await reqBackend.json();
+            
+            const checkoutUrl = dataYupy.checkout_session ? dataYupy.checkout_session.checkout_url : null;
+            const refYupy = dataYupy.yupy_transaction_id;
 
-      // 🛠️ CORRECCIÓN 2: Obtener el objeto correcto
-      const v = booking.viajeSeleccionado; 
-      
-      const payload = {
-        codi_programacion: parseInt(v.id_programacion) || 0,
-        codi_empresa: parseInt(v.codi_empresa) || 1,
-        codi_origen: parseInt(v.codi_origen) || 0,
-        codi_destino: parseInt(v.codi_destino) || 0,
-        codi_sucursal: parseInt(v.codi_sucursal) || 0,
-        codi_ruta: parseInt(v.codi_ruta) || 0,
-        codi_punto_venta: parseInt(v.codi_punto_venta) || 0,
-        codi_servicio: parseInt(v.codi_servicio) || 0,
-        fecha_viaje: booking.busqueda.fecha,
-        hora_viaje: v.hora_viaje || v.hora_partida,
-        asientos_seleccionados: booking.asientos.map(a => String(a.id)),
-        pasajeros: booking.pasajeros.map((p, index) => ({
-          documento: String(p.documento || ''),
-          nombres: String(p.nombres || ''),
-          paterno: String(p.paterno || ''),
-          materno: String(p.materno || ''),
-          fecha_nacimiento: String(p.nacimiento || p.fecha_nacimiento || '2000-01-01'),
-          precio_venta: Number(booking.asientos[index]?.price || 0) // Extraemos precio directo de la selección
-        })),
-        pago: {
-          metodo: 'TARJETA',
-          referencia_operacion: pedido,
-          monto_total: Number(booking.montoTotal) || 0
+            loadingText.textContent = "Cargando entorno seguro...";
+
+            if (typeof YupyCheckout !== 'undefined' && checkoutUrl) {
+                const checkout = YupyCheckout.mount({
+                    container: "#yupy-payment",
+                    checkoutUrl: checkoutUrl,
+                    onEvent(event) {
+                        if (event.type === "payment.reconciled") {
+                            loadingState.classList.remove('opacity-0', 'pointer-events-none');
+                            loadingText.textContent = "¡Pago exitoso! Emitiendo boletos...";
+                            emitirBoletos(refYupy, 'YUPI_OFICIAL'); 
+                        }
+                    }
+                });
+                loadingState.classList.add('opacity-0', 'pointer-events-none');
+                
+            } else {
+                loadingState.classList.add('opacity-0', 'pointer-events-none');
+                document.getElementById('yupy-payment').style.display = 'none';
+                document.getElementById('demo-ui-container').classList.remove('hidden');
+                document.getElementById('demo-ui-container').classList.add('flex');
+                
+                inicializarEventosDemo(refYupy || nroPedido);
+            }
+
+        } catch (err) {
+            loadingText.textContent = `Error: ${err.message}`;
+            loadingText.classList.add('text-red-400');
+            loadingState.querySelector('.loader').style.display = 'none';
         }
-      };
-
-      await new Promise(r => setTimeout(r, 1500)); // sensación de espera de la pasarela
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/confirmar-compra`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.detail || 'No se pudo confirmar la compra.');
-
-        saveBooking({
-          pago: { metodo: 'TARJETA', referenciaOperacion: pedido, montoTotal: booking.montoTotal || 0 },
-          boletos: (body.data && body.data.boletos) || []
-        });
-        
-        // 🛠️ NOTA: Revisa que tu archivo 17-18.html esté en la ruta correcta.
-        // Si no está en la misma carpeta que este archivo, ajusta la ruta.
-        window.location.href = '17-18.html'; 
-        
-      } catch (err) {
-        loader.classList.add('hidden');
-        statusText.textContent = `${err.message}`;
-        statusText.classList.add('text-red-400');
-        btnRetry.classList.remove('hidden');
-      }
     }
 
-    btnRetry.addEventListener('click', confirmarCompra);
-    confirmarCompra();
+    // --- FUNCIONES DE LA INTERFAZ DEMO ---
+    function inicializarEventosDemo(referenciaYupy) {
+        const tabTarjeta = document.getElementById('tab-tarjeta');
+        const tabQr = document.getElementById('tab-qr');
+        const viewTarjeta = document.getElementById('view-tarjeta');
+        const viewQr = document.getElementById('view-qr');
+        const loadingState = document.getElementById('loading-state');
+        const loadingText = document.getElementById('loading-text');
+
+        tabTarjeta.addEventListener('click', () => {
+            tabTarjeta.classList.replace('text-gray-500', 'text-white');
+            tabTarjeta.classList.replace('bg-transparent', 'bg-gray-700');
+            tabQr.classList.replace('text-white', 'text-gray-500');
+            tabQr.classList.replace('bg-gray-700', 'bg-transparent');
+            viewTarjeta.classList.remove('hidden');
+            viewQr.classList.add('hidden');
+        });
+
+        tabQr.addEventListener('click', () => {
+            tabQr.classList.replace('text-gray-500', 'text-white');
+            tabQr.classList.replace('bg-transparent', 'bg-gray-700');
+            tabTarjeta.classList.replace('text-white', 'text-gray-500');
+            tabTarjeta.classList.replace('bg-gray-700', 'bg-transparent');
+            viewQr.classList.remove('flex', 'hidden');
+            viewQr.classList.add('flex');
+            viewTarjeta.classList.add('hidden');
+        });
+
+        document.getElementById('cc-number').addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(.{4})/g, '$1 ').trim();
+            e.target.value = value;
+        });
+
+        document.getElementById('cc-exp').addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 2) value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            e.target.value = value;
+        });
+
+        async function procesarPagoDemo(metodoPago) {
+            document.getElementById('demo-ui-container').style.display = 'none';
+            loadingState.classList.remove('opacity-0', 'pointer-events-none');
+            
+            loadingText.textContent = "Autorizando transacción con YUPY Sandbox...";
+            await new Promise(r => setTimeout(r, 2000)); 
+            
+            loadingText.textContent = "¡Pago aprobado! Generando boletos en JELAF...";
+            emitirBoletos(referenciaYupy, metodoPago);
+        }
+
+        document.getElementById('btn-pagar-tarjeta').addEventListener('click', () => {
+            if(document.getElementById('cc-number').value.length < 15) return alert("Ingresa un número de tarjeta.");
+            procesarPagoDemo('TARJETA_DEMO');
+        });
+
+        document.getElementById('btn-simular-scan').addEventListener('click', () => {
+            procesarPagoDemo('YAPE_PLIN_DEMO');
+        });
+    }
+
+    // --- CONEXIÓN AL ROBOT JELAF ---
+    async function emitirBoletos(referencia, metodo) {
+        try {
+            const v = booking.viajeSeleccionado; 
+            const payloadJelaf = {
+                codi_programacion: parseInt(v.id_programacion) || 0,
+                codi_empresa: parseInt(v.codi_empresa) || 1,
+                codi_origen: parseInt(v.codi_origen) || 0,
+                codi_destino: parseInt(v.codi_destino) || 0,
+                codi_sucursal: parseInt(v.codi_sucursal) || 0,
+                codi_ruta: parseInt(v.codi_ruta) || 0,
+                codi_punto_venta: parseInt(v.codi_punto_venta) || 0,
+                codi_servicio: parseInt(v.codi_servicio) || 0,
+                fecha_viaje: booking.busqueda.fecha,
+                hora_viaje: v.hora_viaje || v.hora_partida,
+                asientos_seleccionados: booking.asientos.map(a => String(a.id)),
+                pasajeros: booking.pasajeros.map((p, index) => ({
+                    documento: String(p.documento || ''),
+                    nombres: String(p.nombres || ''),
+                    paterno: String(p.paterno || ''),
+                    materno: String(p.materno || ''),
+                    fecha_nacimiento: String(p.nacimiento || p.fecha_nacimiento || '2000-01-01'),
+                    precio_venta: Number(booking.asientos[index]?.price || 0)
+                })),
+                pago: {
+                    metodo: metodo,
+                    referencia_operacion: referencia,
+                    monto_total: total
+                }
+            };
+
+            const resJelaf = await fetch(`${API_BASE_URL}/api/v1/confirmar-compra`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadJelaf)
+            });
+            
+            const bodyJelaf = await resJelaf.json();
+            if (!resJelaf.ok) throw new Error(bodyJelaf.detail || 'Fallo en la emisión JELAF.');
+
+            saveBooking({
+                pago: { metodo: 'YUPI (Sandbox)', referenciaOperacion: referencia, montoTotal: total },
+                boletos: (bodyJelaf.data && bodyJelaf.data.boletos) || []
+            });
+            
+            window.location.href = '17-18.html'; 
+            
+        } catch (err) {
+            alert(`Error al emitir boletos:\n${err.message}`);
+            document.getElementById('loading-state').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('demo-ui-container').style.display = 'flex';
+        }
+    }
+
+    iniciarPasarela();
+
 </script>
 </body>
 </html>

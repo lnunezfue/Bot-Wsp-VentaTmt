@@ -4,6 +4,18 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
 <title>Buscar Viaje - WhatsApp Bus</title>
+<!-- CAMUFLAJE PARA PARECER APP NATIVA -->
+<!-- 1. Pinta la barra de notificaciones y la barra del navegador del color oscuro de WhatsApp -->
+<meta name="theme-color" content="#202c33">
+<meta name="msapplication-navbutton-color" content="#202c33">
+<meta name="apple-mobile-web-app-status-bar-style" content="#202c33">
+
+<!-- 2. Le dice al celular que se comporte como una App (esconde barras si es posible) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- 3. Ajusta el contenido hasta los bordes extremos de la pantalla -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <!-- Tailwind CSS v3 CDN -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script>
@@ -188,7 +200,7 @@
 <!-- END: MainContainer -->
 <script data-purpose="simple-interactions">
     // --- Backend real (api_ventas.py) ---
-    const API_BASE_URL = 'http://localhost:8000';
+    const API_BASE_URL = 'https://dinner-dancing-tyke.ngrok-free.dev';
 
     // --- Estado compartido del flujo de compra (localStorage) ---
     const STORAGE_KEY = 'vibeTransitBooking';
