@@ -65,27 +65,13 @@
 </head>
 <body>
   <div class="app-shell">
-    
-    <!-- BEGIN: WebviewHeader -->
-    <header class="sticky top-0 z-20 bg-[#202c33] px-4 py-2 grid grid-cols-[28px_1fr_28px] items-center text-gray-300 text-sm border-b border-gray-700/30">
-      <a class="text-white" data-nav="back" href="../buscar%20viaje/3-4.html" id="btn-volver" aria-label="Volver">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-      </a>
-      <div class="flex flex-col items-center">
-        <span class="text-[10px] text-gray-400 flex items-center gap-1">
-          <svg class="w-2.5 h-2.5" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path></svg>
-          webtestcomercial.jelaf.com
-        </span>
-      </div>
-      <div></div>
-    </header>
-    <!-- END: WebviewHeader -->
-    
+
     <main class="flex-1 flex flex-col overflow-hidden">
       <!-- BEGIN: TitleSection -->
       <div class="pt-6 pb-3 text-center px-4 shrink-0" data-purpose="trip-info">
         <h1 class="text-xl font-bold mb-1">Elige tu asiento</h1>
         <p class="text-xs text-gray-400 uppercase tracking-wide" id="trip-subtitle">Cargando viaje...</p>
+        <p class="text-[10px] text-gray-600 mt-0.5" id="trip-placa"></p>
       </div>
       <!-- END: TitleSection -->
       
@@ -98,7 +84,7 @@
       <!-- BEGIN: BusLayoutContainer -->
       <div class="flex-1 overflow-y-auto px-4 pb-40 bus-map-container" data-purpose="seating-area">
         <p class="text-center text-xs text-gray-500" id="status-message">Consultando plano del bus...</p>
-        <div class="bg-whatsapp-dark/50 border border-gray-800 rounded-3xl p-4 relative hidden" id="bus-layout">
+        <div class="bg-[#1e2f3c] border border-gray-700/60 rounded-3xl p-4 relative hidden" id="bus-layout">
           <p class="text-center text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">▲ Frente del bus</p>
           <div id="bus-grid"><!-- Rendered dynamically by script --></div>
           <p class="text-center text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-3">Parte trasera ▼</p>
@@ -110,7 +96,7 @@
     <!-- BEGIN: BottomLegendAndConfirmation -->
     <div class="fixed-bottom z-10 confirm-container pt-4">
       <div class="flex justify-center items-center gap-4 mb-4 text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-whatsapp-dark/80 backdrop-blur-sm py-2 mx-4 rounded-full border border-gray-800 flex-wrap">
-        <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>Libre</div>
+        <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-white border border-gray-500"></div>Libre</div>
         <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>Ocupado</div>
         <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-whatsapp-green"></div>Tuyo</div>
       </div>
@@ -165,6 +151,8 @@
 
     document.getElementById('trip-subtitle').textContent =
       `${booking.busqueda.origen} → ${booking.busqueda.destino} | ${visualDate} | ${booking.viajeSeleccionado.hora_viaje || ''}`.toUpperCase();
+    document.getElementById('trip-placa').textContent =
+      booking.viajeSeleccionado.placa_bus ? `Placa ${booking.viajeSeleccionado.placa_bus}` : '';
 
     // Transpone una matriz [fila][columna] a un plano vertical
     function transponerAVertical(rows) {
@@ -232,7 +220,8 @@
         await fetch(`${API_BASE_URL}/api/v1/liberar-asiento`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_bloqueo: idBloqueo })
+          body: JSON.stringify({ id_bloqueo: idBloqueo }),
+          keepalive: true
         });
       } catch (err) {
         console.error('No se pudo liberar el asiento en JELAF:', err);
@@ -303,6 +292,34 @@
       }
     }
 
+    // Aviso rápido y no bloqueante (sin botón) cuando tocan un asiento ya ocupado.
+    let toastOcupadoTimeout = null;
+    let toastOcupadoActual = null;
+    function mostrarToastAsientoOcupado(idAsiento) {
+      if (toastOcupadoActual) {
+        clearTimeout(toastOcupadoTimeout);
+        toastOcupadoActual.remove();
+      }
+
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 z-50 bg-red-600 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-lg shadow-red-900/40 transition-opacity duration-300 opacity-0';
+      toast.textContent = `Asiento ${idAsiento} ocupado`;
+      document.body.appendChild(toast);
+      toastOcupadoActual = toast;
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0');
+      });
+
+      toastOcupadoTimeout = setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => {
+          toast.remove();
+          if (toastOcupadoActual === toast) toastOcupadoActual = null;
+        }, 300);
+      }, 2000);
+    }
+
     function renderFloor() {
       const piso = planoPorPiso[currentFloor];
       busGrid.innerHTML = '';
@@ -317,15 +334,16 @@
             const isSelected = selectedSeats.some(s => s.id === cell.id && s.floor === currentFloor);
 
             if (isOccupied) {
-              cellDiv.className = 'aspect-[4/5] bg-red-500/5 border border-red-500/50 rounded-lg flex items-center justify-center';
+              cellDiv.className = 'aspect-[4/5] bg-red-500 border border-red-600 rounded-lg flex flex-col items-center justify-center gap-1 cursor-not-allowed';
               cellDiv.innerHTML = `
-                <div class="w-5 h-5 rounded-full border border-red-500/30 flex items-center justify-center opacity-40">
-                  <svg class="w-3.5 h-3.5 text-red-500" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" fill-rule="evenodd"></path></svg>
-                </div>`;
+                <span class="text-sm font-black leading-none text-white">${cell.id}</span>
+                <svg class="w-3.5 h-3.5 text-white/80" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" fill-rule="evenodd"></path></svg>
+              `;
+              cellDiv.addEventListener('click', () => mostrarToastAsientoOcupado(cell.id));
             } else {
-              cellDiv.className = `aspect-[4/5] rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected ? 'bg-whatsapp-green/20 border-2 border-whatsapp-green' : 'bg-whatsapp-card border border-gray-700 hover:border-gray-500'}`;
+              cellDiv.className = `aspect-[4/5] rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all ${isSelected ? 'bg-whatsapp-green/20 border-2 border-whatsapp-green' : 'bg-white border border-gray-300 hover:border-whatsapp-green/60'}`;
               cellDiv.innerHTML = `
-                <span class="text-sm font-black leading-none ${isSelected ? 'text-whatsapp-green' : 'text-gray-200'}">${cell.id}</span>
+                <span class="text-sm font-black leading-none ${isSelected ? 'text-whatsapp-green' : 'text-gray-800'}">${cell.id}</span>
                 ${cell.angle ? `<span class="text-[9px] mt-1 ${isSelected ? 'text-whatsapp-green/70' : 'text-gray-500'}">${cell.angle}°</span>` : ''}
               `;
               // Enviamos el precio base que guardamos
@@ -413,13 +431,11 @@
       window.location.href = '../rellenar%20datos/8-9.html';
     });
 
-    // Si el usuario se arrepiente y vuelve atrás, liberamos los asientos
-    // que ya había bloqueado para que no queden atascados para otros.
-    document.getElementById('btn-volver').addEventListener('click', (e) => {
-      e.preventDefault();
-      const destino = e.currentTarget.href;
-      Promise.all(selectedSeats.map(a => liberarAsientoEnJelaf(a.idBloqueo)))
-        .finally(() => { window.location.href = destino; });
+    // Si el usuario sale de la pantalla sin confirmar (el miniapp maneja la
+    // navegación de "volver"), liberamos los asientos que ya había bloqueado
+    // para que no queden atascados para otros.
+    window.addEventListener('pagehide', () => {
+      selectedSeats.forEach(a => liberarAsientoEnJelaf(a.idBloqueo));
     });
 
     cargarPlano();

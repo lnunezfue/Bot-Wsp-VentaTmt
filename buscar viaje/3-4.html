@@ -90,24 +90,6 @@
 <body class="font-sans antialiased">
 <div class="app-shell">
   
-  <!-- BEGIN: WhatsApp Browser Header -->
-  <header class="sticky top-0 z-50 bg-[#121b22] border-b border-gray-800 px-4 py-2 grid grid-cols-[32px_1fr_32px] items-center" data-purpose="whatsapp-header">
-    <a class="text-white" data-nav="back" href="1-2-corregir.html" aria-label="Volver">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-    </a>
-    <div class="flex flex-col items-center">
-      <span class="text-xs font-bold leading-none">WhatsApp</span>
-      <span class="text-[10px] text-gray-400 flex items-center gap-1">
-        <svg class="h-2 w-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-          <path clip-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" fill-rule="evenodd"></path>
-        </svg>
-        webtestcomercial.jelaf.com
-      </span>
-    </div>
-    <div></div>
-  </header>
-  <!-- END: WhatsApp Browser Header -->
-  
   <main class="pb-32">
     <!-- BEGIN: Route Title Section -->
     <section class="px-4 pt-6 pb-4 text-center" data-purpose="route-title">
@@ -313,7 +295,7 @@
           <div class="flex flex-wrap gap-2 mb-4">
             <label class="flex items-center gap-2 cursor-pointer">
               <input class="custom-radio" name="service-select" type="radio" ${i === selectedIndex ? 'checked' : ''}/>
-              <span class="bg-surface-bright/30 text-[10px] px-2 py-1.5 rounded-full">Placa ${s.placa || 'Por asignar'}</span>
+              <span class="bg-surface-bright/30 text-[10px] px-2 py-1.5 rounded-full">${s.servicio || 'Bus Cama'}</span>
             </label>
           </div>
           <div class="text-right">
