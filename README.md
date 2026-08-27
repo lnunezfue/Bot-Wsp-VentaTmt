@@ -5,11 +5,6 @@ WhatsApp de la empresa, el bot responde con un botón que abre una mini-webapp d
 HTML construidas con Tailwind), y esa mini-webapp compra el pasaje contra el sistema real de la
 empresa (JELAF), automatizando su interfaz web con Playwright.
 
-**Nota importante:** antes de modificar el proyecto, revisar
-[`docs/known-issues-and-security.md`](docs/known-issues-and-security.md). El repositorio es público
-y actualmente tiene credenciales reales expuestas en `.env` y en el propio código fuente. Es el
-primer punto que debe resolverse.
-
 ## Resumen del sistema
 
 Cliente en WhatsApp → botón de compra → mini-webapp (buscar viaje → elegir asiento → datos del
