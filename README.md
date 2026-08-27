@@ -5,10 +5,6 @@ al WhatsApp de la empresa, el bot le responde con un botón que abre una mini-we
 (construida como páginas HTML sueltas con Tailwind), y esa mini-webapp compra el pasaje de verdad
 contra el sistema real de la empresa (**JELAF**) automatizando su interfaz web con Playwright.
 
-> ⚠️ **Antes de tocar nada, lee [`docs/known-issues-and-security.md`](docs/known-issues-and-security.md).**
-> El repo es público y actualmente tiene credenciales reales expuestas en `.env` y en el propio
-> código fuente. Es el primer punto que hay que resolver.
-
 ## Qué hace el sistema, en una frase
 
 `Cliente en WhatsApp → botón CTA → mini-webapp (buscar viaje → elegir asiento → datos del pasajero
