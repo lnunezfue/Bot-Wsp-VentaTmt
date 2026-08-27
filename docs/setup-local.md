@@ -25,7 +25,7 @@ El backend carga `.env` automáticamente con `load_dotenv()`. Variables usadas:
 | `META_VERIFY_TOKEN` | Verificación del webhook (default en código: `MoqueguaBot2026`) |
 | `YUPY_CLIENT_ID`, `YUPY_CLIENT_SECRET` | Autenticación contra la pasarela de pago Yupy (sandbox) |
 
-⚠️ El repo **ya tiene un `.env` commiteado con valores reales** — no es un ejemplo. Antes de tocar
+El repo **ya tiene un `.env` commiteado con valores reales** — no es un ejemplo. Antes de tocar
 esto, leer [`known-issues-and-security.md`](known-issues-and-security.md).
 
 ## Levantar el backend
@@ -75,7 +75,7 @@ Las páginas tienen `API_BASE_URL` hardcodeado apuntando a un túnel de Ngrok (v
 [`frontend.md`](frontend.md)). Para probar contra tu backend local, cambiar esa línea a
 `http://localhost:8000` en los 6 archivos que la tienen (no hay un único punto de configuración).
 
-## ⚠️ Cuidado al probar el flujo completo
+## Cuidado con el flujo completo
 
 - **Buscar viajes, ver el plano, bloquear/liberar asiento** pegan contra el **JELAF real** (no hay
   entorno de pruebas separado). Bloquear un asiento genera un hold real; si sales de la pantalla
