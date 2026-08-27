@@ -5,7 +5,7 @@ build). El estado del pedido se guarda en `localStorage` bajo la clave **`vibeTr
 se va acumulando a medida que el cliente avanza; cada pantalla lee lo que necesita de ahí y navega
 a la siguiente con `window.location.href`.
 
-## ⚠️ Cada carpeta tiene archivos "vivos" y archivos de referencia muertos
+## Cada carpeta tiene archivos "vivos" y archivos de referencia muertos
 
 Las carpetas de captura de pantalla (`buscar viaje/`, `seleccionar asiento/`, `rellenar datos/`,
 `pasarela de pago/`) contienen, además del HTML real:
