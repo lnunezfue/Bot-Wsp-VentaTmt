@@ -25,7 +25,7 @@ Trae el plano de asientos de un viaje específico, con los asientos ya vendidos 
 - **Body:** `PeticionAsientos` — todos los `codi_*` del viaje elegido + `fecha_viaje`, `hora_viaje`, `placa_bus`
 - El plano base sale de `planos_buses/*.json` (ver [`data-planos-buses.md`](data-planos-buses.md)),
   resuelto por placa; si la placa no está mapeada a ninguna plantilla → `404`.
-- **⚠️ Bug conocido:** el precio de cada piso (`data_piso["price"]`) solo se sobreescribe
+- **Bug conocido:** el precio de cada piso (`data_piso["price"]`) solo se sobreescribe
   `if precio_real_jelaf > 0`. Si JELAF no trae `PrecioVenta`/`PrecioNormal` en ningún asiento de ese
   piso, el piso se queda **sin precio**, y el total en el frontend termina en `S/ NaN`. Se detectó
   en pruebas manuales sobre un servicio con 2 pisos; no está corregido.
@@ -101,12 +101,12 @@ reintenta si no responde rápido).
 
 - **Limitaciones actuales** (ver [`known-issues-and-security.md`](known-issues-and-security.md)):
   no valida la firma `X-Hub-Signature-256`, no deduplica por `message.id`, la URL del frontend está
-  hardcodeada (`https://transportesmoquegua.com/beta/...`, con un comentario `⚠️ MUY IMPORTANTE`
+  hardcodeada (`https://transportesmoquegua.com/beta/...`, con un comentario `MUY IMPORTANTE`
   recordando cambiarla), y la detección de intención es un `if "comprar" in texto` sin más lógica.
 
 ## Modelos de datos (Pydantic)
 
-Definidos todos en la sección `📦 MODELOS DE DATOS` de `api_ventas.py`:
+Definidos todos en la sección `MODELOS DE DATOS` de `api_ventas.py`:
 `PeticionBusqueda`, `PeticionAsientos`, `PeticionBloqueoAsiento`, `PeticionLiberaAsiento`,
 `Pasajero`, `PeticionPreCheckout`, `DatosPago`, `PeticionCompraFinal`, `PeticionYupy`,
 `PeticionPDF`. Sirven a la vez como validación de entrada y como documentación de forma (Swagger
