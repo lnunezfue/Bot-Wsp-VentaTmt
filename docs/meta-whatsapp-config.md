@@ -4,7 +4,7 @@
 > **Business Manager:** el de Transportes Moquegua Turismo
 > **Última actualización:** 2026-08-14
 
-⚠️ **Este documento no debe usarse para guardar tokens, contraseñas ni credenciales reales.** Los valores sensibles (token de acceso, App Secret, credenciales de JELAF) van en variables de entorno (`.env`, excluido por `.gitignore`), nunca en este archivo ni en el código.
+**Este documento no debe usarse para guardar tokens, contraseñas ni credenciales reales.** Los valores sensibles (token de acceso, App Secret, credenciales de JELAF) van en variables de entorno (`.env`, excluido por `.gitignore`), nunca en este archivo ni en el código.
 
 ---
 
@@ -43,8 +43,8 @@ Ubicación en el panel: **WhatsApp → Configuración básica → Paso 1. Pruéb
 | Token de acceso | Temporal (24h) — se regenera desde el mismo panel, botón "Generar token" |
 
 **Al generar el token**, se seleccionó el alcance:
-- ✅ *"Activar solo las cuentas de WhatsApp actuales"* → cuenta marcada: **Test WhatsApp Business Account** (`...432991`).
-- ❌ No se marcó *"Empresa de Transportes Moquegua Turismo"* (`...948998`), que corresponde a la WABA real/producción — se dejará para cuando se configure el número definitivo.
+- *"Activar solo las cuentas de WhatsApp actuales"* → cuenta marcada: **Test WhatsApp Business Account** (`...432991`).
+- No se marcó *"Empresa de Transportes Moquegua Turismo"* (`...948998`), que corresponde a la WABA real/producción — se dejará para cuando se configure el número definitivo.
 
 ### Destinatarios de prueba autorizados
 
@@ -91,22 +91,22 @@ Debe coincidir exactamente entre lo que se configura en el panel de Meta y lo qu
 > describía el diseño *antes* de implementarse; se deja como referencia de la decisión original,
 > pero el estado real es el que dice el checklist.
 
-- ✅ **Implementado.** Endpoints reales en `api_ventas.py` (ver
+- **Implementado.** Endpoints reales en `api_ventas.py` (ver
   [`backend-api.md`](backend-api.md#whatsapp-cloud-api-webhook) para el detalle):
   - `GET /api/v1/webhook` — valida `hub.verify_token` contra `META_VERIFY_TOKEN` y responde
     `hub.challenge`.
   - `POST /api/v1/webhook` — recibe el mensaje, si el texto contiene la palabra `"comprar"`
     dispara `enviar_boton_compra()` en segundo plano, que manda el botón CTA hacia
     `buscar viaje/1-2-corregir.html`, y responde `200` de inmediato.
-- ❌ **Nota**: la ruta real quedó bajo `/api/v1/webhook`, no `/webhook` a secas como decía el diseño
+- **Nota**: la ruta real quedó bajo `/api/v1/webhook`, no `/webhook` a secas como decía el diseño
   original — si se reconfigura el webhook en el panel de Meta, la URL de devolución de llamada debe
   incluir el prefijo `/api/v1`.
-- ❌ Sigue **pendiente** lo que ya se preveía antes de producción: deduplicar por `message.id`
+- Sigue **pendiente** lo que ya se preveía antes de producción: deduplicar por `message.id`
   (Meta reintenta si la respuesta tarda) y validar la firma `X-Hub-Signature-256` con el App
   Secret. Tampoco hay más lógica de intención que buscar la palabra `"comprar"` en el texto.
-- ❌ La URL del frontend a la que apunta el botón CTA está **hardcodeada** en
+- La URL del frontend a la que apunta el botón CTA está **hardcodeada** en
   `enviar_boton_compra()` (`https://transportesmoquegua.com/beta/...`, con un comentario en el
-  código marcado `⚠️ MUY IMPORTANTE` para no olvidar cambiarla antes de ir a producción).
+  código marcado `MUY IMPORTANTE` para no olvidar cambiarla antes de ir a producción).
 
 ---
 
