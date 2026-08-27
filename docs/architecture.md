@@ -62,7 +62,7 @@
 9. **PDF del boleto**: `POST /api/v1/descargar-boleto` genera un PDF con ReportLab **en memoria**
    (no se guarda en disco) y lo devuelve como descarga.
 
-## Por qué la automatización es "RPA" y no una integración normal
+## Por qué la automatización es "RPA" 
 
 JELAF (`moquegua.2jelaf.net.pe`) no expone una API pública que el backend pueda llamar
 directamente con credenciales de aplicación. En su lugar:
