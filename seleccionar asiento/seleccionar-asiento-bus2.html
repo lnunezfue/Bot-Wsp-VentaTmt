@@ -66,6 +66,15 @@
 <body>
   <div class="app-shell">
 
+    <!-- BEGIN: TopBar -->
+    <header class="flex items-center justify-between px-4 pt-4 shrink-0" data-purpose="top-bar">
+      <a href="#" id="btn-back" class="text-whatsapp-green text-sm font-bold flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        Atrás
+      </a>
+    </header>
+    <!-- END: TopBar -->
+
     <main class="flex-1 flex flex-col overflow-hidden">
       <!-- BEGIN: TitleSection -->
       <div class="pt-6 pb-3 text-center px-4 shrink-0" data-purpose="trip-info">
@@ -123,7 +132,7 @@
 
   <script>
     // --- Backend real (api_ventas.py) ---
-    const API_BASE_URL = 'https://dinner-dancing-tyke.ngrok-free.dev';
+    const API_BASE_URL = 'http://localhost:8000';
 
     // --- Estado compartido del flujo de compra (localStorage) ---
     const STORAGE_KEY = 'vibeTransitBooking';
@@ -236,6 +245,7 @@
       if (index > -1) {
         const asiento = selectedSeats[index];
         selectedSeats.splice(index, 1);
+        saveBooking({ asientos: selectedSeats });
         renderFloor();
         updateSummary();
 
@@ -265,7 +275,13 @@
             codi_destino: String(v.codi_destino),
             numero_asiento: id,
             fecha_viaje: booking.busqueda.fecha,
-            precio: price
+            precio: price,
+            codi_empresa: v.codi_empresa,
+            codi_sucursal: v.codi_sucursal,
+            codi_ruta: v.codi_ruta,
+            codi_punto_venta: v.codi_punto_venta,
+            codi_servicio: v.codi_servicio,
+            hora_viaje: v.hora_viaje
           })
         });
         
@@ -283,6 +299,7 @@
         }
         
         selectedSeats.push({ floor, id, price, idBloqueo: body.id_bloqueo });
+        saveBooking({ asientos: selectedSeats });
         renderFloor();
         updateSummary();
       } catch (err) {
@@ -425,16 +442,29 @@
       }
     }
 
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.back();
+    });
+
+    // pagehide se dispara en CUALQUIER salida de esta pantalla, incluyendo
+    // avanzar normalmente con "Confirmar" — sin esta bandera, el asiento se
+    // liberaba en JELAF justo al pasar a rellenar datos/pago, y para cuando
+    // el cliente terminaba de llenar todo ya no estaba reservado.
+    let confirmado = false;
+
     confirmBtn.addEventListener('click', () => {
       if (selectedSeats.length === 0) return;
+      confirmado = true;
       saveBooking({ asientos: selectedSeats });
       window.location.href = '../rellenar%20datos/8-9.html';
     });
 
-    // Si el usuario sale de la pantalla sin confirmar (el miniapp maneja la
-    // navegación de "volver"), liberamos los asientos que ya había bloqueado
-    // para que no queden atascados para otros.
+    // Si el usuario sale de la pantalla sin confirmar (volver atrás, cerrar la
+    // pestaña, etc.), liberamos los asientos que ya había bloqueado para que
+    // no queden atascados para otros.
     window.addEventListener('pagehide', () => {
+      if (confirmado) return;
       selectedSeats.forEach(a => liberarAsientoEnJelaf(a.idBloqueo));
     });
 

@@ -179,12 +179,19 @@ class PeticionAsientos(BaseModel):
 
 class PeticionBloqueoAsiento(BaseModel):
     codi_programacion: int
-    nro_viaje: int = 0  
+    nro_viaje: int = 0
     codi_origen: str
     codi_destino: str
     numero_asiento: str
-    fecha_viaje: str  
+    fecha_viaje: str
     precio: float = 0
+    # Necesarios para re-verificar el plano en vivo antes de bloquear (ver bloquear_asiento).
+    codi_empresa: int = 1
+    codi_sucursal: int = 0
+    codi_ruta: int = 0
+    codi_punto_venta: int = 0
+    codi_servicio: int = 0
+    hora_viaje: str = ""
 
 class PeticionLiberaAsiento(BaseModel):
     id_bloqueo: int
@@ -196,6 +203,11 @@ class Pasajero(BaseModel):
     materno: str
     fecha_nacimiento: str
     precio_venta: float
+    # id_bloqueo del asiento correspondiente (ver confirmar_compra): se
+    # libera justo antes de tomarlo de verdad en el paso final, porque un
+    # asiento que ya aparece "mío" por el bloqueo no se puede re-seleccionar
+    # correctamente en una sesión de navegador distinta.
+    id_bloqueo: int = 0
 
 class PeticionPreCheckout(BaseModel):
     codi_programacion: int = 0
@@ -297,10 +309,45 @@ def buscar_viajes(req: PeticionBusqueda):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def consultar_turnos_jelaf(codi_empresa, codi_origen, codi_destino, codi_sucursal,
+                            codi_ruta, codi_punto_venta, codi_servicio, fecha_jelaf, hora_viaje):
+    """
+    Consulta /itinerarios/turnos en vivo y devuelve (asientos_ocupados, precio_real_jelaf).
+    Compartido por plano-bus y bloquear-asiento para que ambos vean el mismo estado real,
+    en vez de que bloquear-asiento confíe ciegamente en lo que JELAF responda al bloqueo.
+    """
+    payload_jelaf = {
+        "CodiEmpresa": codi_empresa, "CodiOrigen": codi_origen, "CodiDestino": codi_destino,
+        "CodiSucursal": codi_sucursal, "CodiRuta": codi_ruta, "CodiPuntoVenta": codi_punto_venta,
+        "CodiServicio": codi_servicio, "FechaViaje": fecha_jelaf, "HoraViaje": hora_viaje
+    }
+    r = sesion_global_jelaf.post(f"{URL_BASE}/itinerarios/turnos", json=payload_jelaf, timeout=10)
+    datos_jelaf = r.json().get("Valor") or {}
+    lista_asientos = datos_jelaf.get("ListaPlanoBus") or []
+
+    asientos_ocupados = set()
+    precio_real_jelaf = 0
+
+    for asiento in lista_asientos:
+        if precio_real_jelaf == 0:
+            precio_real_jelaf = asiento.get("PrecioVenta", 0) or asiento.get("PrecioNormal", 0)
+
+        nombres = str(asiento.get("Nombres", "")).strip()
+        doc = str(asiento.get("NumeroDocumento", "")).strip()
+        flag_venta = str(asiento.get("FlagVenta", "")).strip()
+
+        if nombres != "" or doc != "" or flag_venta != "":
+            nume_asiento = asiento.get("NumeAsiento", 0)
+            if nume_asiento != 0:
+                asientos_ocupados.add(str(nume_asiento).zfill(2))
+
+    return asientos_ocupados, precio_real_jelaf
+
+
 @app.post("/api/v1/plano-bus")
 def obtener_plano_bus(req: PeticionAsientos):
     if not sesion_global_jelaf: raise HTTPException(status_code=500, detail="Sin sesión Jelaf")
-    
+
     plano_base = resolver_plano_por_placa(req.placa_bus)
     if not plano_base: raise HTTPException(status_code=404, detail=f"Plano no configurado para {req.placa_bus}")
 
@@ -309,34 +356,13 @@ def obtener_plano_bus(req: PeticionAsientos):
         partes = req.fecha_viaje.split("-")
         if len(partes) == 3: fecha_jelaf = f"{partes[2]}/{partes[1]}/{partes[0]}"
 
-    payload_jelaf = {
-        "CodiEmpresa": req.codi_empresa, "CodiOrigen": req.codi_origen, "CodiDestino": req.codi_destino,
-        "CodiSucursal": req.codi_sucursal, "CodiRuta": req.codi_ruta, "CodiPuntoVenta": req.codi_punto_venta,
-        "CodiServicio": req.codi_servicio, "FechaViaje": fecha_jelaf, "HoraViaje": req.hora_viaje
-    }
-    
     try:
-        r = sesion_global_jelaf.post(f"{URL_BASE}/itinerarios/turnos", json=payload_jelaf, timeout=10)
-        datos_jelaf = r.json().get("Valor") or {}
-        lista_asientos = datos_jelaf.get("ListaPlanoBus") or []
-        
-        asientos_ocupados = set()
-        precio_real_jelaf = 0 
-        
-        for asiento in lista_asientos:
-            if precio_real_jelaf == 0:
-                precio_real_jelaf = asiento.get("PrecioVenta", 0) or asiento.get("PrecioNormal", 0)
-                
-            nombres = str(asiento.get("Nombres", "")).strip()
-            doc = str(asiento.get("NumeroDocumento", "")).strip()
-            flag_venta = str(asiento.get("FlagVenta", "")).strip()
-            
-            if nombres != "" or doc != "" or flag_venta != "":
-                nume_asiento = asiento.get("NumeAsiento", 0)
-                if nume_asiento != 0:
-                    asientos_ocupados.add(str(nume_asiento).zfill(2))
+        asientos_ocupados, precio_real_jelaf = consultar_turnos_jelaf(
+            req.codi_empresa, req.codi_origen, req.codi_destino, req.codi_sucursal,
+            req.codi_ruta, req.codi_punto_venta, req.codi_servicio, fecha_jelaf, req.hora_viaje
+        )
 
-        plano_procesado = json.loads(json.dumps(plano_base)) 
+        plano_procesado = json.loads(json.dumps(plano_base))
         for piso, data_piso in plano_procesado.items():
             if precio_real_jelaf > 0: data_piso["price"] = precio_real_jelaf
             for fila in data_piso["rows"]:
@@ -357,6 +383,21 @@ def bloquear_asiento(req: PeticionBloqueoAsiento):
         anio, mes, dia = req.fecha_viaje.split("-")
         fecha_jelaf = f"{dia}/{mes}/{anio}"
 
+    # Re-verificar en vivo contra JELAF que el asiento no esté ya vendido antes de
+    # bloquearlo: JELAF acepta bloquearAsiento igual aunque el asiento ya tenga una
+    # venta registrada (solo rechaza si otro bloqueo temporal lo tiene tomado), así
+    # que la protección real contra "otro ya lo seleccionó" hay que hacerla acá.
+    try:
+        asientos_ocupados, _ = consultar_turnos_jelaf(
+            req.codi_empresa, int(req.codi_origen), int(req.codi_destino), req.codi_sucursal,
+            req.codi_ruta, req.codi_punto_venta, req.codi_servicio, fecha_jelaf, req.hora_viaje
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"No se pudo verificar disponibilidad del asiento: {e}")
+
+    if req.numero_asiento.zfill(2) in asientos_ocupados:
+        raise HTTPException(status_code=409, detail="Ese asiento ya fue vendido, elige otro.")
+
     payload_jelaf = {
         "CodiProgramacion": req.codi_programacion,
         "NroViaje": req.nro_viaje,
@@ -368,7 +409,9 @@ def bloquear_asiento(req: PeticionBloqueoAsiento):
     }
 
     try:
+        print(f"🪑 [DEBUG bloquear-asiento] payload -> {payload_jelaf}")
         r = sesion_global_jelaf.post(f"{URL_BASE}/itinerarios/bloquearAsiento", json=payload_jelaf, timeout=10)
+        print(f"🪑 [DEBUG bloquear-asiento] status={r.status_code} body={r.text[:1000]}")
         datos = r.json()
         if not datos.get("EsCorrecto"):
             raise HTTPException(status_code=409, detail=datos.get("Mensaje", "No se pudo bloquear el asiento."))
@@ -381,7 +424,9 @@ def liberar_asiento(req: PeticionLiberaAsiento):
     if not sesion_global_jelaf: raise HTTPException(status_code=500, detail="Sin sesión Jelaf")
     request_interno = json.dumps({"Terminal": TERMINAL_LIBERA_ASIENTO, "IDS": req.id_bloqueo})
     try:
+        print(f"🔓 [DEBUG liberar-asiento] payload -> {request_interno}")
         r = sesion_global_jelaf.post(f"{URL_BASE}/itinerarios/liberarAsiento", json={"request": request_interno}, timeout=10)
+        print(f"🔓 [DEBUG liberar-asiento] status={r.status_code} body={r.text[:1000]}")
         datos = r.json()
         if not datos.get("EsCorrecto"):
             raise HTTPException(status_code=409, detail=datos.get("Mensaje", "No se pudo liberar el asiento."))
@@ -456,16 +501,124 @@ def generar_checkout_yupi(req: PeticionYupy):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+async def seleccionar_v_select(page, selector_id, texto_busqueda):
+    """
+    Los combos de origen/destino del buscador de JELAF (#cboOrigenPas, etc.)
+    son un widget Vue (v-select), no un <select> nativo: hay que abrirlo,
+    escribir para filtrar, y hacer clic en la opción resultante.
+    """
+    combo = page.locator(f"#{selector_id}")
+    await combo.locator(".dropdown-toggle").click()
+    await page.wait_for_timeout(300)
+    await combo.locator("input[type='search']").fill(texto_busqueda)
+    await page.wait_for_timeout(600)
+    opcion = combo.locator(f"ul.dropdown-menu li[role='option']:has-text('{texto_busqueda}')").first
+    await opcion.wait_for(state="visible", timeout=5000)
+    await opcion.click()
+    await page.wait_for_timeout(300)
+
+
+async def _nro_asiento_seteado(page) -> bool:
+    """
+    Lee el estado interno de Vue para saber si el asiento actual ya quedó
+    registrado en this.list.ventas[indexVenta].NroAsiento — condición real
+    (confirmada en vivo) de la que depende que #btnTipoPago se habilite.
+    """
+    try:
+        return bool(await page.evaluate("""
+            () => {
+                let el = document.getElementById('btnTipoPago');
+                for (let i = 0; i < 15 && el; i++) {
+                    if (el.__vue__) {
+                        const vm = el.__vue__;
+                        const list = vm.list || (vm.$parent && vm.$parent.list);
+                        const idx = vm.indexVenta !== undefined ? vm.indexVenta : (vm.$parent && vm.$parent.indexVenta);
+                        return !!(list && list.ventas && list.ventas[idx] && list.ventas[idx].NroAsiento);
+                    }
+                    el = el.parentElement;
+                }
+                return false;
+            }
+        """))
+    except Exception:
+        return False
+
+
 # ==========================================
 # 🚀 AUTOMATIZACIÓN DE VENTA RPA (JELAF)
 # ==========================================
 @app.post("/api/v1/confirmar-compra")
 async def confirmar_compra(req: PeticionCompraFinal):
+    # Última verificación antes de arriesgar todo el flujo RPA: puede haber
+    # pasado tiempo desde que se bloquearon los asientos (llenar datos, leer
+    # términos, pagar), y ese bloqueo puede vencer o alguien puede haber
+    # comprado el mismo asiento por otro canal (boletería física, teléfono)
+    # mientras tanto. Esto no es 100% infalible — ningún sistema con venta
+    # multicanal lo es — pero cierra la ventana de riesgo lo más posible:
+    # aborta limpio ANTES de abrir Chrome si algo ya no está disponible, en
+    # vez de que el RPA choque a ciegas contra un asiento ajeno.
+    fecha_jelaf_check = req.fecha_viaje
+    if "-" in fecha_jelaf_check:
+        p_ = fecha_jelaf_check.split("-")
+        fecha_jelaf_check = f"{p_[2]}/{p_[1]}/{p_[0]}"
+    try:
+        ocupados_ahora, _ = consultar_turnos_jelaf(
+            req.codi_empresa, req.codi_origen, req.codi_destino, req.codi_sucursal,
+            req.codi_ruta, req.codi_punto_venta, req.codi_servicio, fecha_jelaf_check, req.hora_viaje
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"No se pudo verificar disponibilidad antes de comprar: {e}")
+
+    ya_vendidos = [a for a in req.asientos_seleccionados if str(a).zfill(2) in ocupados_ahora]
+    if ya_vendidos:
+        raise HTTPException(
+            status_code=409,
+            detail=f"El/los asiento(s) {', '.join(ya_vendidos)} ya no está(n) disponible(s) — fueron vendidos por otro canal. Vuelve a elegir asiento."
+        )
+
+    # Liberar nuestros propios bloqueos de TODOS los asientos de este pedido
+    # antes de abrir Chrome: un asiento que ya aparece "mío" por el bloqueo
+    # hecho desde la app NO se puede re-seleccionar correctamente dentro del
+    # navegador de este paso — Vue solo registra bien la selección
+    # (this.list.ventas[indexVenta].NroAsiento, de lo que depende habilitar
+    # el pago) cuando el asiento se ve genuinamente disponible en el momento
+    # del clic (confirmado en vivo). Se hace ACÁ, todo junto y ANTES de
+    # inyectar las cookies en el navegador — hacerlo intercalado dentro del
+    # loop de clics (con la sesión HTTP aparte de sesion_global_jelaf)
+    # desincroniza la cookie de sesión que ya tiene el navegador y rompe el
+    # resto de la página (confirmado en vivo: el plano dejaba de encontrar
+    # los botones de asiento justo después).
+    for pasajero in req.pasajeros:
+        if pasajero.id_bloqueo:
+            try:
+                liberar_asiento(PeticionLiberaAsiento(id_bloqueo=pasajero.id_bloqueo))
+            except HTTPException as e:
+                print(f"⚠️ No se pudo liberar bloqueo {pasajero.id_bloqueo} (puede ya haber expirado solo): {e.detail}")
+
     boletos_generados = []
     print("🔌 Iniciando Chrome para confirmar compra...")
     async with async_playwright() as p:
         browser = await p.chromium.launch(channel="chrome", headless=False)
         context = await browser.new_context(viewport={'width': 1280, 'height': 720})
+
+        # CRÍTICO: JELAF guarda el bloqueo del asiento en una cookie de sesión
+        # (asientoBloqueado_<CodiProgramacion>_<Fecha>_<Asiento>=<id_bloqueo>),
+        # no solo en el servidor. Si este paso abre un login nuevo (sesión de
+        # cookies distinta), esa cookie no existe ahí y JELAF nunca reconoce
+        # a esta sesión como dueña del bloqueo — el asiento se ve "seleccionado"
+        # pero /itinerarios/grabar-pasajero nunca se confirma y el botón de
+        # pago queda deshabilitado para siempre. La solución: heredar las
+        # cookies de sesion_global_jelaf (la misma sesión que hizo el bloqueo)
+        # en vez de loguearse de cero.
+        if sesion_global_jelaf:
+            cookies_pw = [
+                {"name": c.name, "value": c.value,
+                 "domain": c.domain or "moquegua.2jelaf.net.pe", "path": c.path or "/"}
+                for c in sesion_global_jelaf.cookies
+            ]
+            if cookies_pw:
+                await context.add_cookies(cookies_pw)
+
         page = await context.new_page()
         page.set_default_timeout(45000)
 
@@ -486,8 +639,18 @@ async def confirmar_compra(req: PeticionCompraFinal):
                 await page.click("#btnLogIn")
                 await page.locator("#txtUsuario").wait_for(state="hidden", timeout=15000)
 
-            await page.goto("https://moquegua.2jelaf.net.pe/pasajes/itinerarios")
+            # Necesario aunque sea la misma URL: el login deja el SPA en otra
+            # vista y sin esto #txtFecha nunca queda visible (probado en vivo).
+            await page.goto(URL_ITINERARIOS, wait_until="domcontentloaded")
             await page.wait_for_timeout(3000)
+
+            # El buscador de JELAF filtra por "Origen pasajero" (queda en el
+            # terminal por defecto de la cuenta, ej. TACNA) — sin esto la
+            # tabla de resultados nunca muestra viajes de otro origen y el
+            # RPA termina buscando/haciendo clic en la ruta equivocada.
+            nombre_origen = CIUDADES_POR_CODIGO.get(req.codi_origen)
+            if nombre_origen:
+                await seleccionar_v_select(page, "cboOrigenPas", nombre_origen)
 
             fecha_jelaf = req.fecha_viaje
             if "-" in fecha_jelaf:
@@ -520,15 +683,26 @@ async def confirmar_compra(req: PeticionCompraFinal):
 
             for i, pasajero in enumerate(req.pasajeros):
                 asiento_str = str(req.asientos_seleccionados[i]).zfill(2)
-                
+
+                # (Los bloqueos ya se liberaron todos antes de abrir Chrome —
+                # ver el comentario grande más arriba. Acá solo queda hacer
+                # el clic real, que ahora sí toma la ruta correcta de Vue.)
                 boton_asiento = page.locator(f"#btnAsiento_{asiento_str}").first
-                await boton_asiento.wait_for(state="attached", timeout=5000)
+                await boton_asiento.wait_for(state="attached", timeout=20000)
                 await boton_asiento.scroll_into_view_if_needed()
-                
+
                 try: await boton_asiento.click(force=True, timeout=1500)
                 except: await boton_asiento.evaluate("node => node.click()")
-                
-                await page.wait_for_timeout(1000)
+                await page.wait_for_timeout(2000)
+
+                if not await _nro_asiento_seteado(page):
+                    # Otro cliente/canal se lo llevó justo en el instante en
+                    # que quedó libre. Nada se ha confirmado ni pagado
+                    # todavía — abortamos limpio en vez de seguir a ciegas.
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"El asiento {asiento_str} ya no está disponible — probablemente lo tomó otro cliente justo en este instante. Vuelve a elegir asiento."
+                    )
 
                 await page.locator("#txtDocumento").wait_for(state="visible", timeout=5000)
                 await page.fill("#txtDocumento", pasajero.documento)
@@ -541,22 +715,83 @@ async def confirmar_compra(req: PeticionCompraFinal):
                     await page.fill("#txtApellidoPaterno", pasajero.paterno)
                     await page.fill("#txtApellidoMaterno", pasajero.materno)
 
+                # Siempre se llena la fecha de nacimiento nosotros mismos,
+                # sin condición: confirmado en vivo que JELAF no limpia este
+                # campo al cambiar de pasajero si el nuevo DNI no trae fecha
+                # en la respuesta de RENIEC — deja el valor del pasajero
+                # ANTERIOR pegado (edad no-cero pero de la persona equivocada,
+                # así que revisar "¿ya tiene un valor?" no sirve para
+                # detectarlo). Mejor ser siempre la fuente de verdad acá.
+                fecha_nac_jelaf = pasajero.fecha_nacimiento
+                if "-" in fecha_nac_jelaf:
+                    p_nac = fecha_nac_jelaf.split("-")
+                    fecha_nac_jelaf = f"{p_nac[2]}/{p_nac[1]}/{p_nac[0]}"
+                try:
+                    await page.fill("#txtFechaNac", fecha_nac_jelaf)
+                    # Llenar la fecha puede abrir un calendario emergente que
+                    # no se cierra solo y tapa el resto del formulario —
+                    # Escape lo cierra sin perder el valor.
+                    await page.keyboard.press("Escape")
+                    await page.wait_for_timeout(300)
+                except: pass
+
                 await page.fill("#txtPrecio", str(pasajero.precio_venta))
                 await page.wait_for_timeout(500)
 
-            await page.click("#btnTipoPago")
-            await page.wait_for_timeout(2000)
+            # Con 2+ pasajeros, JELAF muestra cada asiento en su propia
+            # "pestaña" (span.btn-mini-ticket, con el número de asiento) —
+            # #btnTipoPago se queda con tamaño 0 (invisible) hasta que se
+            # pasa por cada una (confirmado en vivo: el clic en el asiento
+            # de la pestaña siguiente SÍ cambia this.list.ventas[indexVenta]
+            # correctamente; lo que NO funciona es tratar de "avanzar"
+            # haciendo clic en #btnTipoPago entre pasajero y pasajero — eso
+            # deja pegada la pestaña anterior). Con 1 solo pasajero no hay
+            # pestañas que recorrer.
+            # ".btn-mini-ticket" a secas matchea también instancias ocultas
+            # de otras secciones de esta SPA gigante (confirmado en vivo:
+            # salieron 4 en vez de 2 con solo 2 pasajeros) — cada clic fallido
+            # sobre una oculta quema el timeout completo (45s). ":visible"
+            # filtra a las que de verdad están en pantalla.
+            tabs_asiento = page.locator(".btn-mini-ticket:visible")
+            n_tabs = await tabs_asiento.count()
+            if n_tabs > 1:
+                for idx in range(n_tabs):
+                    try:
+                        await tabs_asiento.nth(idx).click(timeout=5000)
+                        await page.wait_for_timeout(600)
+                    except Exception as e:
+                        print(f"⚠️ No se pudo hacer clic en la pestaña de asiento #{idx}: {e}")
 
-            tipo_pago_input = page.locator("#cboTipoPagoTP input[type='search']").first
-            await tipo_pago_input.click(force=True)
+            # scroll_into_view_if_needed puede colgarse pensando que el
+            # elemento "no es visible" aunque su rect ya tenga tamaño y
+            # posición válidos dentro del viewport (confirmado en vivo) —
+            # probablemente algo lo mantiene "inestable" para el chequeo de
+            # accionabilidad de Playwright sin que sea un problema real.
+            # click(force=True) evita ese chequeo y va directo a las
+            # coordenadas.
+            btn_pago_total = page.locator("#btnTipoPago")
+            try:
+                await btn_pago_total.click(timeout=5000)
+            except Exception:
+                await btn_pago_total.click(force=True)
+            await page.wait_for_timeout(3000)
+
+            # Playwright intenta hacer scroll internamente incluso con
+            # force=True — con formularios más largos (2+ pasajeros) ese
+            # scroll interno falla igual sobre estos inputs de v-select. El
+            # clic vía JS puro evita por completo ese mecanismo.
+            tipo_pago_input = page.locator("#cboTipoPagoTP input[type='search']:visible").first
+            try: await tipo_pago_input.click(force=True, timeout=5000)
+            except: await tipo_pago_input.evaluate("node => node.click()")
             await page.wait_for_timeout(200)
             await tipo_pago_input.fill("TARJETA DE CREDITO")
             await page.wait_for_timeout(400)
             await tipo_pago_input.press("Enter")
             await page.wait_for_timeout(300)
 
-            tipo_input = page.locator("#cboTipoTP input[type='search']").first
-            await tipo_input.click(force=True)
+            tipo_input = page.locator("#cboTipoTP input[type='search']:visible").first
+            try: await tipo_input.click(force=True, timeout=5000)
+            except: await tipo_input.evaluate("node => node.click()")
             await page.wait_for_timeout(200)
             await tipo_input.fill("VISA")
             await page.wait_for_timeout(400)
@@ -575,15 +810,17 @@ async def confirmar_compra(req: PeticionCompraFinal):
             await num_input.press("Enter")
             await page.wait_for_timeout(300)
 
-            emb_input = page.locator("#cboEmbarqueTP input[type='search']").first
-            await emb_input.click(force=True)
+            emb_input = page.locator("#cboEmbarqueTP input[type='search']:visible").first
+            try: await emb_input.click(force=True, timeout=5000)
+            except: await emb_input.evaluate("node => node.click()")
             await page.wait_for_timeout(300)
             await emb_input.press("ArrowDown")
             await emb_input.press("Enter")
             await page.wait_for_timeout(300)
 
-            arr_input = page.locator("#cboArriboTP input[type='search']").first
-            await arr_input.click(force=True)
+            arr_input = page.locator("#cboArriboTP input[type='search']:visible").first
+            try: await arr_input.click(force=True, timeout=5000)
+            except: await arr_input.evaluate("node => node.click()")
             await page.wait_for_timeout(300)
             await arr_input.press("ArrowDown")
             await arr_input.press("Enter")
@@ -591,8 +828,7 @@ async def confirmar_compra(req: PeticionCompraFinal):
             await arr_input.press("Enter") 
             await page.wait_for_timeout(600)
 
-            btn_aceptar_modal = page.locator("#btnSaveVentaTipoPago").first
-            await btn_aceptar_modal.scroll_into_view_if_needed()
+            btn_aceptar_modal = page.locator("#btnSaveVentaTipoPago:visible").first
             try: await btn_aceptar_modal.click(force=True, timeout=3000)
             except: await btn_aceptar_modal.evaluate("node => node.click()")
             await page.wait_for_timeout(2000)
@@ -636,6 +872,8 @@ async def confirmar_compra(req: PeticionCompraFinal):
                 "data": {"boletos": boletos_generados}
             }
 
+        except HTTPException:
+            raise
         except Exception as e:
             print(f"❌ Error en Robot: {e}")
             raise HTTPException(status_code=500, detail="Fallo en la automatización: " + str(e))

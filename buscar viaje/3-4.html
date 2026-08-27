@@ -89,7 +89,16 @@
 </head>
 <body class="font-sans antialiased">
 <div class="app-shell">
-  
+
+  <!-- BEGIN: TopBar -->
+  <header class="flex items-center justify-between px-4 pt-4" data-purpose="top-bar">
+    <a href="#" id="btn-back" class="text-whatsapp text-sm font-bold flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      Atrás
+    </a>
+  </header>
+  <!-- END: TopBar -->
+
   <main class="pb-32">
     <!-- BEGIN: Route Title Section -->
     <section class="px-4 pt-6 pb-4 text-center" data-purpose="route-title">
@@ -125,7 +134,7 @@
 
 <script>
     // --- Backend real (api_ventas.py) ---
-    const API_BASE_URL = 'https://dinner-dancing-tyke.ngrok-free.dev';
+    const API_BASE_URL = 'http://localhost:8000';
 
     // --- Estado compartido del flujo de compra (localStorage) ---
     const STORAGE_KEY = 'vibeTransitBooking';
@@ -140,8 +149,13 @@
 
     let booking = loadBooking();
     if (!booking.busqueda) {
-      window.location.href = '1-2-corregir.html'; 
+      window.location.href = '1-2-corregir.html';
     }
+
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.back();
+    });
 
     const list = document.getElementById('service-list');
     const emptyState = document.getElementById('empty-state');
@@ -357,8 +371,15 @@
         precio_base: viajeElegido.precio_base // El precio base que llega del JSON
       };
 
-      saveBooking({ viajeSeleccionado: viajeSeleccionadoParaPlano });
-      window.location.href = '../seleccionar asiento/seleccionar-asiento-bus2.html'; 
+      // Elegir un viaje distinto invalida los asientos/pasajeros de una pasada
+      // anterior (son de otro bus, con otro plano) — se limpian acá para que
+      // no reaparezcan pre-seleccionados en la siguiente pantalla.
+      saveBooking({
+        viajeSeleccionado: viajeSeleccionadoParaPlano,
+        asientos: undefined, pasajeros: undefined,
+        montoTotal: undefined, contacto: undefined
+      });
+      window.location.href = '../seleccionar asiento/seleccionar-asiento-bus2.html';
     });
 
     renderHeader();

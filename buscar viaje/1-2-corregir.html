@@ -189,7 +189,7 @@
 <!-- END: MainContainer -->
 <script data-purpose="simple-interactions">
     // --- Backend real (api_ventas.py) ---
-    const API_BASE_URL = 'https://dinner-dancing-tyke.ngrok-free.dev';
+    const API_BASE_URL = 'http://localhost:8000';
 
     // --- Estado compartido del flujo de compra (localStorage) ---
     const STORAGE_KEY = 'vibeTransitBooking';
@@ -214,6 +214,23 @@
         fechaInput.showPicker();
       }
     });
+
+    // La ciudad elegida en un campo no puede volver a aparecer disponible en
+    // el otro (no tiene sentido un viaje de una ciudad a sí misma).
+    const origenSelect = document.getElementById('origen');
+    const destinoSelect = document.getElementById('destino');
+
+    function excluirCiudadElegida(elegido, otro) {
+      const valor = elegido.value;
+      Array.from(otro.options).forEach(opt => {
+        if (!opt.value) return; // deja el "-- Selecciona --" intacto
+        opt.disabled = opt.value === valor;
+      });
+      if (otro.value === valor) otro.value = '';
+    }
+
+    origenSelect.addEventListener('change', () => excluirCiudadElegida(origenSelect, destinoSelect));
+    destinoSelect.addEventListener('change', () => excluirCiudadElegida(destinoSelect, origenSelect));
 
     const btnContinuar = document.getElementById('btn-continuar');
     const apiError = document.getElementById('api-error');
@@ -250,7 +267,15 @@
           return;
         }
 
-        saveBooking({ busqueda: { origen, destino, fecha }, resultados });
+        // Una búsqueda nueva invalida todo lo elegido en una pasada anterior
+        // (viaje, asientos bloqueados, pasajeros, monto) — si no se limpia acá,
+        // esos datos viejos quedan pegados en localStorage y reaparecen más
+        // adelante en el flujo aunque correspondan a otro bus/ruta.
+        saveBooking({
+          busqueda: { origen, destino, fecha }, resultados,
+          viajeSeleccionado: undefined, asientos: undefined,
+          pasajeros: undefined, montoTotal: undefined, contacto: undefined
+        });
         window.location.href = '3-4.html';
       } catch (err) {
         apiError.textContent = `${err.message} (¿está corriendo api_ventas.py en ${API_BASE_URL}?)`;

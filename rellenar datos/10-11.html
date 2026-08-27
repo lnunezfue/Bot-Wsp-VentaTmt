@@ -69,6 +69,14 @@
 </head>
 <body class="font-sans antialiased">
 <div class="app-shell">
+<!-- BEGIN: TopBar -->
+<header class="flex items-center justify-between px-4 pt-4" data-purpose="top-bar">
+<a href="#" id="btn-back" class="text-brand text-sm font-bold flex items-center gap-1">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+Atrás
+</a>
+</header>
+<!-- END: TopBar -->
 <main class="p-4 space-y-6">
 <!-- BEGIN: HeaderSection -->
 <section class="text-center space-y-1 pt-2" data-purpose="page-title">
@@ -215,7 +223,7 @@
 <!-- END: TerminosModal -->
 <script>
     // --- Backend real (api_ventas.py) ---
-    const API_BASE_URL = 'https://dinner-dancing-tyke.ngrok-free.dev';
+    const API_BASE_URL = 'http://localhost:8000';
 
     // --- Estado compartido del flujo de compra (localStorage) ---
     const STORAGE_KEY = 'vibeTransitBooking';
@@ -272,6 +280,11 @@
     }
     chkTerminos.addEventListener('change', refreshContinueState);
     refreshContinueState();
+
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.back();
+    });
 
     const modalTerminos = document.getElementById('modal-terminos');
     const linkTerminos = document.getElementById('link-terminos');

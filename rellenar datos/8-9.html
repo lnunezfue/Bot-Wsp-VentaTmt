@@ -68,6 +68,14 @@
 </head>
 <body>
 <div class="app-shell">
+<!-- BEGIN: TopBar -->
+<header class="flex items-center justify-between px-4 pt-4" data-purpose="top-bar">
+<a href="#" id="btn-back" class="text-whatsapp-green text-sm font-bold flex items-center gap-1">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+Atrás
+</a>
+</header>
+<!-- END: TopBar -->
 <!-- BEGIN: MainContent -->
 <main class="flex-grow p-4 overflow-y-auto custom-scrollbar pb-28">
 <h1 class="text-xl font-semibold mb-1 text-whatsapp-text">Datos de Pasajeros</h1>
@@ -100,6 +108,12 @@
     }
 
     const booking = loadBooking();
+
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.back();
+    });
+
     const asientos = booking.asientos && booking.asientos.length ? booking.asientos : [{ id: '01', price: 70 }];
 
     document.getElementById('seat-summary').textContent =

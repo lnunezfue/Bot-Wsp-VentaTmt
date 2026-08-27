@@ -150,7 +150,7 @@
 </div>
 
 <script>
-    const API_BASE_URL = 'https://dinner-dancing-tyke.ngrok-free.dev';
+    const API_BASE_URL = 'http://localhost:8000';
     const STORAGE_KEY = 'vibeTransitBooking';
 
     function loadBooking() {
@@ -319,7 +319,8 @@
                     paterno: String(p.paterno || ''),
                     materno: String(p.materno || ''),
                     fecha_nacimiento: String(p.nacimiento || p.fecha_nacimiento || '2000-01-01'),
-                    precio_venta: Number(booking.asientos[index]?.price || 0)
+                    precio_venta: Number(booking.asientos[index]?.price || 0),
+                    id_bloqueo: Number(booking.asientos[index]?.idBloqueo || 0)
                 })),
                 pago: {
                     metodo: metodo,
