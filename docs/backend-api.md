@@ -1,124 +1,134 @@
 # Backend — referencia de la API
 
-Todo vive en **`api_ventas.py`** (FastAPI, un solo archivo). Base URL en desarrollo:
-`http://localhost:8000` (o el túnel de Ngrok que la reemplace, ver [`frontend.md`](frontend.md)).
-CORS abierto a cualquier origen (`allow_origins=["*"]`).
+Toda la lógica reside en `api_ventas.py` (FastAPI, un solo archivo). URL base en desarrollo:
+`http://localhost:8000` (o el túnel de Ngrok que la reemplace; ver [`frontend.md`](frontend.md)).
+CORS está abierto a cualquier origen (`allow_origins=["*"]`).
 
-Al arrancar (`lifespan`), el backend abre un Chrome visible con Playwright, inicia sesión en
-JELAF con `JELAF_USUARIO`/`JELAF_PASSWORD`, y guarda la sesión autenticada en la variable global
-`sesion_global_jelaf`. **Si ese login falla, todos los endpoints que dependen de JELAF responden
-500 "Sin sesión Jelaf".**
+Al arrancar (`lifespan`), el backend abre un Chrome visible con Playwright, inicia sesión en JELAF
+con `JELAF_USUARIO`/`JELAF_PASSWORD`, y guarda la sesión autenticada en la variable global
+`sesion_global_jelaf`. Si ese inicio de sesión falla, todos los endpoints que dependen de JELAF
+responden `500` con el mensaje "Sin sesión Jelaf".
 
 ## Flujo de compra
 
 ### `POST /api/v1/buscar-viajes`
-Busca viajes en JELAF para una ruta/fecha y los filtra a solo los que tienen un plano de asientos
-configurado en `planos_buses/` (si un bus no tiene plano, no aparece aunque exista el viaje real).
+Busca viajes en JELAF para una ruta y fecha, y los filtra a los que tienen un plano de asientos
+configurado en `planos_buses/` (un viaje real sin plano configurado no aparece en el resultado).
 
-- **Body:** `{ origen, destino, fecha }` (fecha en `YYYY-MM-DD`, se convierte a `DD/MM/YYYY` para JELAF)
-- **Respuesta:** `{ status, data: [{ id_programacion, nro_viaje, codi_*, servicio, hora_partida, placa, asientos_libres, precio_base, ... }] }`
+- **Body:** `{ origen, destino, fecha }` (fecha en formato `YYYY-MM-DD`, convertida a `DD/MM/YYYY`
+  para JELAF).
+- **Respuesta:** `{ status, data: [{ id_programacion, nro_viaje, codi_*, servicio, hora_partida, placa, asientos_libres, precio_base, ... }] }`.
 
 ### `POST /api/v1/plano-bus`
-Trae el plano de asientos de un viaje específico, con los asientos ya vendidos marcados como
+Obtiene el plano de asientos de un viaje específico, con los asientos ya vendidos marcados como
 `occupied`, y el precio real de JELAF inyectado en cada piso.
 
-- **Body:** `PeticionAsientos` — todos los `codi_*` del viaje elegido + `fecha_viaje`, `hora_viaje`, `placa_bus`
-- El plano base sale de `planos_buses/*.json` (ver [`data-planos-buses.md`](data-planos-buses.md)),
-  resuelto por placa; si la placa no está mapeada a ninguna plantilla → `404`.
-- **⚠️ Bug conocido:** el precio de cada piso (`data_piso["price"]`) solo se sobreescribe
-  `if precio_real_jelaf > 0`. Si JELAF no trae `PrecioVenta`/`PrecioNormal` en ningún asiento de ese
-  piso, el piso se queda **sin precio**, y el total en el frontend termina en `S/ NaN`. Se detectó
-  en pruebas manuales sobre un servicio con 2 pisos; no está corregido.
+- **Body:** `PeticionAsientos` — los campos `codi_*` del viaje seleccionado, más `fecha_viaje`,
+  `hora_viaje` y `placa_bus`.
+- El plano base proviene de `planos_buses/*.json` (ver [`data-planos-buses.md`](data-planos-buses.md)),
+  resuelto por placa; si la placa no está asociada a ninguna plantilla, responde `404`.
+- **Bug conocido:** el precio de cada piso (`data_piso["price"]`) solo se sobrescribe cuando
+  `precio_real_jelaf > 0`. Si JELAF no informa `PrecioVenta`/`PrecioNormal` en ningún asiento de ese
+  piso, el piso queda sin precio y el total mostrado en el frontend resulta en `S/ NaN`. Se detectó
+  en pruebas manuales sobre un servicio con dos pisos; no está corregido.
 
 ### `POST /api/v1/bloquear-asiento`
-Bloquea un asiento **de verdad** en JELAF (hold temporal). Si JELAF lo rechaza (ya tomado por otro
-cliente, etc.) responde `409` con el mensaje de JELAF.
+Bloquea un asiento en JELAF (hold temporal real). Si JELAF lo rechaza (por ejemplo, ya tomado por
+otro cliente), responde `409` con el mensaje devuelto por JELAF.
 
-- **Body:** `PeticionBloqueoAsiento` (`codi_programacion`, `numero_asiento`, `fecha_viaje`, `precio`, ...)
-- **Respuesta éxito:** `{ status: "success", id_bloqueo }`
+- **Body:** `PeticionBloqueoAsiento` (`codi_programacion`, `numero_asiento`, `fecha_viaje`,
+  `precio`, ...).
+- **Respuesta exitosa:** `{ status: "success", id_bloqueo }`.
 
 ### `POST /api/v1/liberar-asiento`
-Libera un bloqueo previo. El frontend lo llama automáticamente si el cliente sale de la pantalla de
-asientos sin confirmar (evento `pagehide`, con `fetch(..., { keepalive: true })` para que la
-petición sobreviva aunque la pestaña ya se esté cerrando).
+Libera un bloqueo previo. El frontend lo invoca automáticamente cuando el cliente abandona la
+pantalla de selección de asientos sin confirmar (evento `pagehide`, usando
+`fetch(..., { keepalive: true })` para que la petición se complete aunque la pestaña se esté
+cerrando).
 
-- **Body:** `{ id_bloqueo }`
+- **Body:** `{ id_bloqueo }`.
 
 ### `POST /api/v1/pre-checkout`
-No toca JELAF — solo valida (máx. 5 pasajeros, misma cantidad de asientos que pasajeros) y suma
-`precio_venta` de cada pasajero para devolver el `monto_total` a mostrar en el resumen.
+No interactúa con JELAF: valida la petición (máximo 5 pasajeros, misma cantidad de asientos que de
+pasajeros) y suma el `precio_venta` de cada pasajero para devolver el `monto_total` que se muestra
+en el resumen.
 
-- **Body:** `PeticionPreCheckout` (`asientos_seleccionados[]`, `pasajeros[]`)
+- **Body:** `PeticionPreCheckout` (`asientos_seleccionados[]`, `pasajeros[]`).
 
 ### `POST /api/v1/confirmar-compra`
 
-El robot RPA que emite el boleto.
-Emite el boleto **real** en JELAF. No es una llamada a una API: abre Chrome con Playwright,
-inicia sesión, busca el viaje, hace clic asiento por asiento, llena los datos de cada pasajero,
-completa el formulario de pago con una tarjeta de prueba generada al vuelo
-(`0000-0000-0000-XXXX`), y confirma la venta. Ver
-[`architecture.md`](architecture.md#por-qué-la-automatización-es-rpa-y-no-una-integración-normal)
-para el porqué.
+Robot RPA que emite el boleto real en JELAF. No es una llamada directa a una API: abre Chrome con
+Playwright, inicia sesión, busca el viaje, selecciona cada asiento, completa los datos de cada
+pasajero, llena el formulario de pago con una tarjeta de prueba generada en el momento
+(`0000-0000-0000-XXXX`), y confirma la venta. El detalle de por qué se implementa como RPA está en
+[`architecture.md`](architecture.md#por-qué-la-automatización-se-implementa-como-rpa-y-no-como-una-integración-convencional).
 
-- **Body:** `PeticionCompraFinal` (mismos datos del viaje + `asientos_seleccionados[]` +
-  `pasajeros[]` + `pago: { metodo, referencia_operacion, monto_total }`)
-- **Respuesta éxito:** `{ status: "success", data: { boletos: [{ asiento, pasajero, documento, precio, nro_boleto, estado }] } }`
-- Timeout interno por paso hasta 45s; cualquier selector que no aparezca a tiempo revienta el flujo
-  completo con `500 "Fallo en la automatización: ..."` — es el punto más frágil de todo el sistema
-  porque depende 1:1 de que la UI de JELAF no cambie.
+Actualmente soporta de forma confirmada la venta de un asiento por transacción. La venta de dos o
+más asientos en una misma transacción está en desarrollo (ver
+[`known-issues-and-security.md`](known-issues-and-security.md)).
+
+- **Body:** `PeticionCompraFinal` (los mismos datos del viaje, más `asientos_seleccionados[]`,
+  `pasajeros[]` y `pago: { metodo, referencia_operacion, monto_total }`).
+- **Respuesta exitosa:** `{ status: "success", data: { boletos: [{ asiento, pasajero, documento, precio, nro_boleto, estado }] } }`.
+- El timeout interno por paso llega hasta 45 segundos; cualquier selector que no aparezca a tiempo
+  interrumpe el flujo completo con `500 "Fallo en la automatización: ..."`. Es el punto más frágil
+  de todo el sistema, porque depende directamente de que la interfaz de JELAF no cambie.
 
 ### `POST /api/v1/descargar-boleto`
-Genera el PDF del boleto **en memoria** con ReportLab (no se guarda en disco) y lo devuelve como
-adjunto descargable.
+Genera el PDF del boleto en memoria con ReportLab (sin persistencia en disco) y lo devuelve como
+archivo adjunto descargable.
 
-- **Body:** `PeticionPDF` (`nro_boleto`, `pasajero`, `documento`, `origen`, `destino`, `fecha`, `hora`, `asiento`, `precio`)
-- **Respuesta:** PDF binario (`application/pdf`, `Content-Disposition: attachment`)
+- **Body:** `PeticionPDF` (`nro_boleto`, `pasajero`, `documento`, `origen`, `destino`, `fecha`,
+  `hora`, `asiento`, `precio`).
+- **Respuesta:** PDF binario (`application/pdf`, `Content-Disposition: attachment`).
 
 ## Tipos de documento
 
 El frontend (`rellenar datos/8-9.html`) captura `tipoDocumento` (DNI `01`, Pasaporte `02`, Carnet
-de Extranjería `03`, RUC `04`) con validación de formato en el navegador (DNI 8 dígitos numéricos,
-RUC 11 dígitos numéricos, CE alfanumérico). **El backend no recibe `tipoDocumento` en ningún
-payload** — el modelo `Pasajero` solo tiene `documento` como string libre. La idea de "RUC para
-generar factura en vez de boleta" quedó solo capturada en el frontend; el backend siempre genera
-"BOLETA DE VENTA ELECTRÓNICA" (texto fijo en `descargar_pdf_boleto`), no hay lógica de facturación
-todavía.
+de Extranjería `03`, RUC `04`) con validación de formato en el navegador (DNI de 8 dígitos
+numéricos, RUC de 11 dígitos numéricos, CE alfanumérico). El backend no recibe `tipoDocumento` en
+ningún payload: el modelo `Pasajero` solo tiene `documento` como texto libre. La opción de generar
+factura en lugar de boleta cuando el documento es RUC quedó capturada únicamente en el frontend; el
+backend siempre genera "BOLETA DE VENTA ELECTRÓNICA" (texto fijo en `descargar_pdf_boleto`), sin
+lógica de facturación implementada todavía.
 
 ## WhatsApp Cloud API (webhook)
 
 ### `GET /api/v1/webhook`
-Verificación que exige Meta al configurar el webhook. Compara `hub.verify_token` contra
-`META_VERIFY_TOKEN` (`.env`, default `"MoqueguaBot2026"`) y devuelve `hub.challenge` en texto plano
-si coincide; si no, `403`.
+Verificación requerida por Meta al configurar el webhook. Compara `hub.verify_token` contra
+`META_VERIFY_TOKEN` (definido en `.env`, con valor por defecto `"MoqueguaBot2026"`) y devuelve
+`hub.challenge` en texto plano si coincide; en caso contrario responde `403`.
 
 ### `POST /api/v1/webhook`
 Recibe los mensajes entrantes de WhatsApp. Recorre `entry[].changes[].value.messages[]`; si el
-mensaje es de texto y contiene la palabra `"comprar"` (case-insensitive), dispara en segundo plano
-(`BackgroundTasks`) la función `enviar_boton_compra`, que llama a la Graph API de Meta para
-mandarle al cliente un mensaje interactivo `cta_url` con el botón "Comprar Pasaje" apuntando a
-`buscar viaje/1-2-corregir.html`. Siempre responde `200 "EVENT_RECEIVED"` de inmediato (Meta
-reintenta si no responde rápido).
+mensaje es de texto y contiene la palabra `"comprar"` (sin distinción de mayúsculas), dispara en
+segundo plano (`BackgroundTasks`) la función `enviar_boton_compra`, que llama a la Graph API de
+Meta para enviar al cliente un mensaje interactivo `cta_url` con el botón "Comprar Pasaje" hacia
+`buscar viaje/1-2-corregir.html`. Siempre responde `200 "EVENT_RECEIVED"` de inmediato, ya que Meta
+reintenta el envío si la respuesta no llega con rapidez.
 
 - **Limitaciones actuales** (ver [`known-issues-and-security.md`](known-issues-and-security.md)):
   no valida la firma `X-Hub-Signature-256`, no deduplica por `message.id`, la URL del frontend está
-  hardcodeada (`https://transportesmoquegua.com/beta/...`, con un comentario `⚠️ MUY IMPORTANTE`
-  recordando cambiarla), y la detección de intención es un `if "comprar" in texto` sin más lógica.
+  fija en el código (`https://transportesmoquegua.com/beta/...`, con un comentario en el código
+  que advierte sobre la necesidad de actualizarla), y la detección de intención se limita a
+  `if "comprar" in texto`, sin lógica adicional.
 
 ## Modelos de datos (Pydantic)
 
-Definidos todos en la sección `📦 MODELOS DE DATOS` de `api_ventas.py`:
-`PeticionBusqueda`, `PeticionAsientos`, `PeticionBloqueoAsiento`, `PeticionLiberaAsiento`,
-`Pasajero`, `PeticionPreCheckout`, `DatosPago`, `PeticionCompraFinal`, `PeticionYupy`,
-`PeticionPDF`. Sirven a la vez como validación de entrada y como documentación de forma (Swagger
-autogenerado disponible en `/docs` mientras el backend está corriendo).
+Definidos en la sección de modelos de datos de `api_ventas.py`: `PeticionBusqueda`,
+`PeticionAsientos`, `PeticionBloqueoAsiento`, `PeticionLiberaAsiento`, `Pasajero`,
+`PeticionPreCheckout`, `DatosPago`, `PeticionCompraFinal`, `PeticionYupy`, `PeticionPDF`. Sirven a
+la vez como validación de entrada y como documentación de forma (la documentación interactiva
+generada por Swagger está disponible en `/docs` mientras el backend está en ejecución).
 
-## Integración Yupy (pagos)
+## Integración con Yupy (pagos)
 
 ### `POST /api/v1/generar-checkout-yupi`
-Se autentica contra `sandbox-api.yupy.us` con `YUPY_CLIENT_ID`/`YUPY_CLIENT_SECRET`, crea una
-orden de pago (`payment-orders`) y, si Yupy no la devuelve incluida, crea también una
-`checkout-session` (expira en 900s). Devuelve la respuesta de Yupy tal cual (incluye
-`checkout_session.checkout_url` que el frontend monta con el SDK oficial de Yupy).
+Se autentica contra `sandbox-api.yupy.us` con `YUPY_CLIENT_ID`/`YUPY_CLIENT_SECRET`, crea una orden
+de pago (`payment-orders`) y, si Yupy no la incluye en la respuesta, crea también una
+`checkout-session` (con expiración de 900 segundos). Devuelve la respuesta de Yupy sin
+modificaciones (incluye `checkout_session.checkout_url`, que el frontend utiliza con el SDK
+oficial de Yupy).
 
-- **Body:** `{ monto, pedido, nombre_comprador }`
-- Si Yupy rechaza cualquier paso, `500` con el detalle textual de la respuesta de Yupy.
+- **Body:** `{ monto, pedido, nombre_comprador }`.
+- Si Yupy rechaza cualquier paso, responde `500` con el detalle textual de la respuesta de Yupy.
