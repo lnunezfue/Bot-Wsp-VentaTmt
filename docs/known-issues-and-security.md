@@ -3,7 +3,7 @@
 Ordenado por prioridad. Lo de la sección 1 es urgente y accionable hoy mismo; el resto es deuda
 técnica que conviene conocer pero no bloquea el uso del sistema.
 
-## 1. 🔴 Crítico — credenciales reales expuestas en un repo público
+## 1. Crítico — credenciales reales expuestas en un repo público
 
 **Estado verificado el 2026-08-14:** el repositorio `lnunezfue/Bot-Wsp-VentaTmt` en GitHub es
 **público** (`visibility: public`). El commit `Payment-demo` (de un colaborador) agregó un archivo
@@ -61,7 +61,7 @@ expuestos** mientras sigan en el código.
 5. Considerar si el repo debería ser **privado** en vez de público, dado que además de secretos
    contiene la lógica de negocio completa de la empresa.
 
-## 2. 🟠 Arquitectura frágil por diseño
+## 2. Arquitectura frágil por diseño
 
 - **`confirmar-compra` es RPA puro** (Playwright haciendo clic en la UI real de JELAF). Depende de
   que los `id`/selectores de esa interfaz no cambien y de tiempos de espera fijos
@@ -80,7 +80,7 @@ expuestos** mientras sigan en el código.
   forma de auditar o recuperar un pedido si el navegador se cierra antes de confirmar, ni de saber
   desde el backend cuántos pedidos están "en curso".
 
-## 3. 🟡 Bugs conocidos
+## 3. Bugs conocidos
 
 - **Total "S/ NaN"** en selección de asiento: si JELAF no devuelve precio (`PrecioVenta` /
   `PrecioNormal`) para ningún asiento de un piso, ese piso se queda sin la clave `price` y el
@@ -97,10 +97,10 @@ expuestos** mientras sigan en el código.
   deduplica por `message.id` (si Meta reintenta por timeout, se puede procesar el mismo mensaje dos
   veces y mandar el botón de compra repetido).
 - **URL del frontend hardcodeada en el webhook**, apuntando a un dominio (`transportesmoquegua.com/beta/...`)
-  que puede no estar desplegado todavía — hay un comentario `⚠️ MUY IMPORTANTE` en el código
+  que puede no estar desplegado todavía — hay un comentario `MUY IMPORTANTE` en el código
   recordando actualizarla.
 
-## 4. 🟢 Deuda técnica / limpieza pendiente
+## 4. Deuda técnica / limpieza pendiente
 
 - ~~Sin `requirements.txt`~~ — **resuelto** (2026-08-14): ya existe `requirements.txt` en la raíz
   con las versiones fijadas (`fastapi==0.139.2`, `uvicorn==0.51.0`, `requests==2.34.2`,
