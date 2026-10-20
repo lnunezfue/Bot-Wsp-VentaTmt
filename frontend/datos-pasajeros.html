@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vibe Transit - Datos de pasajeros</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            whatsapp: {
+              dark: '#0b141b',
+              card: '#1c262d',
+              input: '#121b22',
+              green: '#25d366',
+              text: '#e9edef',
+              muted: '#8696a0',
+              border: '#2a3942'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-styling">
+    body {
+      margin: 0;
+      background-color: #0b141b;
+      color: #e9edef;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .app-shell {
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .fixed-bottom {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    /* Hide default date icon to style custom one */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.5;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 10px;
+    }
+    input:invalid, select:invalid {
+      border-color: #2a3942;
+    }
+  </style>
+<script src="config.js?v=2026-10-18b"></script>
+</head>
+<body>
+<div class="app-shell">
+<!-- BEGIN: TopBar -->
+<header class="flex items-center justify-between px-4 pt-4" data-purpose="top-bar">
+<a href="#" id="btn-back" class="text-whatsapp-green text-sm font-bold flex items-center gap-1">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+Atrás
+</a>
+</header>
+<!-- END: TopBar -->
+<!-- BEGIN: MainContent -->
+<main class="flex-grow p-4 overflow-y-auto custom-scrollbar pb-28">
+<h1 class="text-xl font-semibold mb-1 text-whatsapp-text">Datos de Pasajeros</h1>
+<p class="text-xs text-whatsapp-muted mb-4" id="seat-summary"></p>
+<!-- BEGIN: PassengerForms -->
+<form id="passenger-form" class="space-y-4">
+<div id="passenger-forms-container"></div>
+</form>
+<!-- END: PassengerForms -->
+</main>
+<!-- END: MainContent -->
+</div>
+<!-- BEGIN: BottomAction -->
+<div class="fixed-bottom p-4 bg-whatsapp-dark border-t border-whatsapp-border" data-purpose="footer-navigation">
+<button class="w-full bg-whatsapp-green hover:bg-emerald-500 text-black font-bold py-4 rounded-xl transition-colors active:scale-95 duration-75" id="btn-continuar">
+      Continuar
+    </button>
+</div>
+<!-- END: BottomAction -->
+<script>
+    // --- Backend real (api_ventas.py) ---
+    const API_BASE_URL = window.TMT.API_BASE_URL;
+
+    // --- Estado del flujo de compra: sessionStorage = una compra por pestaña ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveBooking(partial) {
+      const updated = Object.assign({}, loadBooking(), partial);
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    }
+
+    const booking = loadBooking();
+
+    // Si no hay una venta iniciada en el worker JELAF (bookingId), no tiene
+    // sentido estar en esta pantalla — se perdió el estado de los asientos.
+    if (!booking.bookingId) {
+      window.location.href = 'seleccionar-asiento.html';
+    }
+
+    // Mientras el cliente llena los formularios, avisamos cada 30s que la
+    // venta sigue viva para que el worker no se libere por inactividad (ver
+    // TIMEOUT_INACTIVIDAD_SEGUNDOS en jelaf_worker.py).
+    const heartbeatInterval = setInterval(() => {
+      fetch(`${API_BASE_URL}/api/v2/venta/heartbeat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: booking.bookingId })
+      }).catch(() => {});
+    }, 30000);
+
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.back();
+    });
+
+    const asientos = booking.asientos && booking.asientos.length ? booking.asientos : [{ id: '01', price: 70 }];
+
+    document.getElementById('seat-summary').textContent =
+      `${asientos.length} pasajero${asientos.length > 1 ? 's' : ''} · Asiento${asientos.length > 1 ? 's' : ''} ${asientos.map(a => a.id).join(', ')}`;
+
+    const container = document.getElementById('passenger-forms-container');
+    const existentes = booking.pasajeros || [];
+
+    // Celular con código de país (diseño del compañero, CHATBOT PRUEBA 8-9.html):
+    // Tacna es frontera y viajan chilenos y bolivianos. Mismas reglas que valida
+    // el servidor (_celular en api_ventas.py).
+    const PREFIJOS = [['+51', '🇵🇪 +51'], ['+56', '🇨🇱 +56'], ['+591', '🇧🇴 +591'], ['+593', '🇪🇨 +593'],
+                      ['+54', '🇦🇷 +54'], ['+55', '🇧🇷 +55'], ['+57', '🇨🇴 +57']];
+    function separarTelefono(tel) {
+      const t = String(tel || '').replace(/[^\d+]/g, '');
+      const largoPrimero = PREFIJOS.map(p => p[0]).sort((a, b) => b.length - a.length);
+      for (const pre of largoPrimero) {
+        if (t.startsWith(pre)) return { prefijo: pre, numero: t.slice(pre.length) };
+      }
+      return { prefijo: '+51', numero: t.replace(/^\+/, '') };
+    }
+    function telefonoValido(prefijo, numero) {
+      return prefijo === '+51' ? /^9[0-9]{8}$/.test(numero) : /^[0-9]{8,12}$/.test(numero);
+    }
+
+    // Nadie mayor de 120 años (pedido de boletería, 2026-10-08; el backend
+    // valida lo mismo). Fecha más antigua permitida: quien cumple 121 mañana.
+    const EDAD_MAXIMA = 120;
+    const NACIMIENTO_MINIMO = (() => {
+      const [a, m, d] = window.TMT.hoyLima().split('-').map(Number);
+      // Date.UTC corre un 29/02 inexistente al 01/03 en vez de fallar.
+      const hace121 = new Date(Date.UTC(a - EDAD_MAXIMA - 1, m - 1, d)).toISOString().slice(0, 10);
+      return window.TMT.sumarDias(hace121, 1);
+    })();
+
+    function validarNacimiento(input) {
+      const v = input.value;
+      input.setCustomValidity(
+        v && v < NACIMIENTO_MINIMO ? `Revisa la fecha: no puede tener más de ${EDAD_MAXIMA} años.`
+        : v && v > window.TMT.hoyLima() ? 'Revisa la fecha: no puede ser una fecha futura.'
+        : '');
+    }
+
+    asientos.forEach((asiento, i) => {
+      const p = existentes[i] || {};
+      const card = document.createElement('section');
+      card.className = 'bg-whatsapp-card rounded-xl p-5 border border-whatsapp-border';
+      card.dataset.purpose = 'passenger-form';
+      card.innerHTML = `
+        <div class="flex items-center gap-2 mb-6">
+          <span class="text-whatsapp-green font-bold">Pasajero ${i + 1}</span>
+          <span class="text-whatsapp-muted text-sm">• Asiento: ${asiento.id}</span>
+        </div>
+        <div class="space-y-5">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-1">
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Documento</label>
+              <select class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3" data-field="tipoDocumento">
+                <option value="01" ${p.tipoDocumento === '01' || !p.tipoDocumento ? 'selected' : ''}>DNI</option>
+                <option value="02" ${p.tipoDocumento === '02' ? 'selected' : ''}>Pasaporte</option>
+                <option value="03" ${p.tipoDocumento === '03' ? 'selected' : ''}>Carnet de Extranjería</option>
+                <!-- RUC no es documento de un pasajero y el bot aún no emite facturas. -->
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Número</label>
+              <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 placeholder-gray-600" data-field="documento" inputmode="numeric" maxlength="8" placeholder="8 dígitos" required type="text" value="${window.TMT.esc(p.documento || '')}"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Nombres</label>
+            <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 uppercase" data-field="nombres" placeholder="Nombres completos" required type="text" value="${window.TMT.esc(p.nombres || '')}"/>
+          </div>
+          <div class="grid grid-cols-1 gap-5">
+            <div>
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Apellido Paterno</label>
+              <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 uppercase" data-field="paterno" required type="text" value="${window.TMT.esc(p.paterno || '')}"/>
+            </div>
+            <div>
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Apellido Materno</label>
+              <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 uppercase" data-field="materno" type="text" value="${window.TMT.esc(p.materno || '')}"/>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Sexo</label>
+              <select class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3" data-field="sexo">
+                <option value="M" ${p.sexo === 'M' || !p.sexo ? 'selected' : ''}>Masculino</option>
+                <option value="F" ${p.sexo === 'F' ? 'selected' : ''}>Femenino</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Nacimiento</label>
+              <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 pr-10" data-field="nacimiento" required type="date" min="${NACIMIENTO_MINIMO}" max="${window.TMT.hoyLima()}" value="${window.TMT.esc(p.nacimiento || '')}"/>
+            </div>
+          </div>
+          ${i === 0 ? `
+          <div class="grid grid-cols-1 gap-5 mt-2 border-t border-whatsapp-border pt-4">
+          <div>
+            <label class="block text-xs text-whatsapp-muted mb-1.5 ml-1">Teléfono <span class="text-whatsapp-green font-bold">(Obligatorio)</span></label>
+            <div class="flex gap-2">
+              <select class="w-1/3 bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3" data-field="prefijo" aria-label="Código de país">
+                ${PREFIJOS.map(([v, etiqueta]) => `<option value="${v}" ${separarTelefono(p.telefono).prefijo === v ? 'selected' : ''}>${etiqueta}</option>`).join('')}
+              </select>
+              <input class="w-2/3 bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 placeholder-gray-600" data-field="telefono" inputmode="numeric" maxlength="9" minlength="9" pattern="9[0-9]{8}" title="9 dígitos, empieza con 9" placeholder="999999999" required type="tel" value="${window.TMT.esc(separarTelefono(p.telefono).numero)}"/>
+            </div>
+          </div>
+          <div>
+            <label class="flex items-center gap-1 text-xs text-whatsapp-muted mb-1.5 ml-1">
+              Correo Electrónico <span class="text-whatsapp-green font-bold">(Obligatorio)</span>
+            </label>
+            <input class="w-full bg-whatsapp-input border-whatsapp-border rounded-lg text-whatsapp-text focus:ring-whatsapp-green focus:border-whatsapp-green py-3 lowercase placeholder-gray-600" data-field="email" placeholder="ejemplo@correo.com" type="email" required autocomplete="email" inputmode="email" value="${window.TMT.esc(p.email || '')}"/>
+          </div>
+          </div>
+          ` : ''}
+        </div>
+      `;
+      container.appendChild(card);
+      configurarValidacionDocumento(card);
+      configurarAutocompletadoDNI(card);
+      const inputNacimiento = card.querySelector('[data-field="nacimiento"]');
+      inputNacimiento.addEventListener('input', () => validarNacimiento(inputNacimiento));
+      validarNacimiento(inputNacimiento);
+    });
+
+    // Celular: solo dígitos y reglas según el país, y si el cliente llegó desde
+    // WhatsApp se trae rellenado con el número desde el que escribió (token
+    // firmado ?c=; siempre peruano).
+    const inputTelefono = container.querySelector('[data-field="telefono"]');
+    const selectPrefijo = container.querySelector('[data-field="prefijo"]');
+    function aplicarReglasTelefono() {
+      const peru = selectPrefijo.value === '+51';
+      inputTelefono.maxLength = peru ? 9 : 12;
+      inputTelefono.minLength = peru ? 9 : 8;
+      inputTelefono.pattern = peru ? '9[0-9]{8}' : '[0-9]{8,12}';
+      inputTelefono.title = peru ? '9 dígitos, empieza con 9' : 'De 8 a 12 dígitos, sin el código de país';
+      inputTelefono.placeholder = peru ? '999999999' : '912345678';
+      inputTelefono.value = inputTelefono.value.slice(0, inputTelefono.maxLength);
+    }
+    if (inputTelefono && selectPrefijo) {
+      aplicarReglasTelefono();
+      selectPrefijo.addEventListener('change', aplicarReglasTelefono);
+      inputTelefono.addEventListener('input', () => {
+        inputTelefono.value = inputTelefono.value.replace(/\D/g, '').slice(0, inputTelefono.maxLength);
+      });
+      if (!inputTelefono.value && booking.contactoToken) {
+        fetch(`${API_BASE_URL}/api/v2/contacto?c=${encodeURIComponent(booking.contactoToken)}`)
+          .then(r => r.json())
+          .then(b => {
+            if (b.telefono && !inputTelefono.value) {
+              selectPrefijo.value = '+51';
+              aplicarReglasTelefono();
+              inputTelefono.value = b.telefono;
+            }
+          })
+          .catch(() => {}); // si falla, el cliente lo escribe a mano
+      }
+    }
+
+    // Autocompleta nombres/apellidos/fecha de nacimiento consultando la base
+    // de clientes de JELAF (POST /api/v1/consultar-cliente) apenas el DNI
+    // llega a 8 dígitos. Solo aplica a pasajeros que YA compraron antes con
+    // la empresa — si no lo encuentra, el pasajero sigue llenando a mano.
+    // Si el cliente cambia el DNI, los datos se reemplazan por los del DNI
+    // nuevo; y si el nuevo no está en JELAF, se borra lo que se había
+    // autocompletado del anterior (antes quedaba el nombre de otra persona,
+    // observación de boletería del 2026-10-08). Lo que el cliente corrigió a
+    // mano después del autocompletado no se borra.
+    function configurarAutocompletadoDNI(card) {
+      const selectTipo = card.querySelector('[data-field="tipoDocumento"]');
+      const inputDoc = card.querySelector('[data-field="documento"]');
+      const campos = {
+        nombres: card.querySelector('[data-field="nombres"]'),
+        paterno: card.querySelector('[data-field="paterno"]'),
+        materno: card.querySelector('[data-field="materno"]'),
+        nacimiento: card.querySelector('[data-field="nacimiento"]')
+      };
+
+      let ultimoConsultado = '';
+      let autocompletado = {}; // campo -> valor que puso el autocompletado
+
+      function borrarAutocompletado() {
+        for (const [campo, valor] of Object.entries(autocompletado)) {
+          if (campos[campo].value === valor) campos[campo].value = '';
+        }
+        autocompletado = {};
+      }
+
+      async function consultarSiAplica() {
+        if (selectTipo.value !== '01') return; // por ahora solo DNI
+        const doc = inputDoc.value.trim();
+        if (doc.length !== 8 || doc === ultimoConsultado) return;
+        ultimoConsultado = doc;
+
+        // Aviso pequeño bajo el documento mientras JELAF busca los datos.
+        let estado = card.querySelector('[data-estado-dni]');
+        if (!estado) {
+          estado = document.createElement('div');
+          estado.setAttribute('data-estado-dni', '');
+          inputDoc.insertAdjacentElement('afterend', estado);
+        }
+        estado.innerHTML = window.TMT.spinner('Buscando tus datos…', 'py-1 !justify-start text-xs');
+        let body = null;
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/consultar-cliente`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ booking_id: booking.bookingId, tipo_documento: '01', documento: doc })
+          });
+          body = res.ok ? await res.json() : null;
+        } catch (err) {
+          // Silencioso a propósito: si la consulta falla, el pasajero sigue
+          // llenando el formulario a mano sin que se note ningún error.
+        }
+        estado.innerHTML = '';
+        // El cliente ya escribió otro DNI mientras se consultaba: esta respuesta es vieja.
+        if (inputDoc.value.trim() !== doc) return;
+
+        borrarAutocompletado();
+        if (!body || !body.encontrado) return;
+        const nuevos = {
+          nombres: (body.nombres || '').toUpperCase(),
+          paterno: (body.paterno || '').toUpperCase(),
+          materno: (body.materno || '').toUpperCase(),
+          nacimiento: body.fecha_nacimiento || ''
+        };
+        for (const [campo, valor] of Object.entries(nuevos)) {
+          if (!valor) continue;
+          campos[campo].value = valor;
+          autocompletado[campo] = campos[campo].value;
+        }
+        validarNacimiento(campos.nacimiento);
+      }
+
+      inputDoc.addEventListener('blur', consultarSiAplica);
+      inputDoc.addEventListener('input', () => {
+        if (inputDoc.value.trim().length === 8) consultarSiAplica();
+      });
+    }
+
+    // Ajusta el input de documento según el tipo elegido: DNI y RUC solo
+    // números (8 y 11 dígitos respectivamente), Carnet de Extranjería admite
+    // letras, Pasaporte queda libre.
+    function configurarValidacionDocumento(card) {
+      const selectTipo = card.querySelector('[data-field="tipoDocumento"]');
+      const inputDoc = card.querySelector('[data-field="documento"]');
+
+      function aplicarReglas() {
+        const tipo = selectTipo.value;
+        if (tipo === '01') { // DNI
+          inputDoc.maxLength = 8;
+          inputDoc.setAttribute('inputmode', 'numeric');
+          inputDoc.pattern = '[0-9]{8}';
+          inputDoc.placeholder = '8 dígitos';
+        } else if (tipo === '04') { // RUC
+          inputDoc.maxLength = 11;
+          inputDoc.setAttribute('inputmode', 'numeric');
+          inputDoc.pattern = '[0-9]{11}';
+          inputDoc.placeholder = '20123456789';
+        } else if (tipo === '03') { // Carnet de Extranjería
+          inputDoc.maxLength = 12;
+          inputDoc.removeAttribute('inputmode');
+          inputDoc.removeAttribute('pattern');
+          inputDoc.placeholder = 'CE001234567';
+        } else { // Pasaporte
+          inputDoc.maxLength = 15;
+          inputDoc.removeAttribute('inputmode');
+          inputDoc.removeAttribute('pattern');
+          inputDoc.placeholder = 'Pasaporte';
+        }
+        if (inputDoc.value.length > inputDoc.maxLength) {
+          inputDoc.value = inputDoc.value.slice(0, inputDoc.maxLength);
+        }
+      }
+
+      inputDoc.addEventListener('input', () => {
+        const tipo = selectTipo.value;
+        if (tipo === '01' || tipo === '04') {
+          inputDoc.value = inputDoc.value.replace(/[^0-9]/g, '').slice(0, inputDoc.maxLength);
+        } else if (tipo === '03') {
+          inputDoc.value = inputDoc.value.replace(/[^A-Za-z0-9]/g, '').slice(0, inputDoc.maxLength);
+        }
+      });
+
+      selectTipo.addEventListener('change', aplicarReglas);
+      aplicarReglas();
+    }
+
+    // --- Carga de pasajeros en JELAF en segundo plano ---
+    // Cada pasajero se manda a JELAF apenas su tarjeta queda completa, mientras
+    // el cliente sigue con el siguiente; "Continuar" solo espera lo que falte.
+    // `enviados[i]` guarda la firma de lo último que JELAF recibió de ese
+    // asiento: si el cliente edita algo, la firma cambia y se reenvía.
+    const enviados = {};      // i -> firma ya aceptada por el backend
+    const enPuerta = {};      // i -> { firma, promesa } envío en curso
+    const cardsBg = () => container.querySelectorAll('[data-purpose="passenger-form"]');
+
+    function leerPasajero(card, i, celular) {
+      const get = (field) => {
+        const el = card.querySelector(`[data-field="${field}"]`);
+        return el ? el.value.trim() : '';
+      };
+      return {
+        tipoDocumento: get('tipoDocumento'),
+        documento: get('documento'),
+        nombres: get('nombres').toUpperCase(),
+        paterno: get('paterno').toUpperCase(),
+        materno: get('materno').toUpperCase(),
+        sexo: get('sexo'),
+        nacimiento: get('nacimiento'),
+        precioVenta: asientos[i].price,
+        email: i === 0 ? get('email').toLowerCase() : (booking.pasajeros && booking.pasajeros[0] && booking.pasajeros[0].email) || '',
+        telefono: celular
+      };
+    }
+
+    function celularContactoActual() {
+      // Con código de país: "+51987654321". El servidor solo pasa a JELAF el peruano.
+      const el = container.querySelector('[data-field="telefono"]');
+      const pre = container.querySelector('[data-field="prefijo"]');
+      const numero = el ? el.value.trim() : '';
+      return numero ? `${pre ? pre.value : '+51'}${numero}` : '';
+    }
+
+    function tarjetaCompleta(card, celular) {
+      // Mismas reglas del formulario (required/pattern), sin mostrar mensajes.
+      const { prefijo, numero } = separarTelefono(celular);
+      return telefonoValido(prefijo, numero) &&
+        Array.from(card.querySelectorAll('input:required, select:required')).every(el => el.checkValidity());
+    }
+
+    function firmaDe(p) {
+      return JSON.stringify([p.documento, p.nombres, p.paterno, p.materno, p.nacimiento, p.precioVenta, p.telefono, p.sexo, p.tipoDocumento]);
+    }
+
+    async function enviarPasajero(i, p) {
+      const res = await fetch(`${API_BASE_URL}/api/v2/venta/pasajero`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          booking_id: booking.bookingId,
+          numero_asiento: asientos[i].id,
+          documento: p.documento,
+          nombres: p.nombres,
+          paterno: p.paterno,
+          materno: p.materno,
+          fecha_nacimiento: p.nacimiento,
+          precio_venta: p.precioVenta,
+          telefono: p.telefono,
+          sexo: p.sexo,
+          tipo_documento: p.tipoDocumento || '01'
+        })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detalle = typeof body.detail === 'string' ? body.detail : 'Revisa los datos de este pasajero.';
+        const error = new Error(`Pasajero ${i + 1} (asiento ${asientos[i].id}): ${detalle}`);
+        error.status = res.status;
+        throw error;
+      }
+      enviados[i] = firmaDe(p);
+    }
+
+    // Devuelve la promesa del envío (o null si no hace falta / no está completo).
+    function asegurarEnviado(i, card, celular) {
+      if (!tarjetaCompleta(card, celular)) return null;
+      const p = leerPasajero(card, i, celular);
+      const firma = firmaDe(p);
+      if (enviados[i] === firma) return Promise.resolve();
+      if (enPuerta[i] && enPuerta[i].firma === firma) return enPuerta[i].promesa;
+      // Un envío anterior de este mismo asiento aún en curso: se encadena para
+      // que el backend los reciba en orden (el más nuevo gana).
+      const previa = enPuerta[i] ? enPuerta[i].promesa.catch(() => {}) : Promise.resolve();
+      const promesa = previa.then(() => enviarPasajero(i, p)).finally(() => {
+        if (enPuerta[i] && enPuerta[i].promesa === promesa) delete enPuerta[i];
+      });
+      enPuerta[i] = { firma, promesa };
+      return promesa;
+    }
+
+    function enviarEnSegundoPlano(card, i) {
+      // Un fallo aquí no molesta al cliente: "Continuar" lo reintenta y, si
+      // vuelve a fallar, ahí sí se le muestra el error.
+      const p = asegurarEnviado(i, card, celularContactoActual());
+      if (p) p.catch(() => {});
+    }
+
+    // Al salir de un campo (blur) de una tarjeta que ya está completa.
+    cardsBg().forEach((card, i) => {
+      card.addEventListener('focusout', () => {
+        // Espera un tick: si el foco solo saltó a otro campo de la MISMA tarjeta
+        // no se manda (el cliente sigue escribiendo).
+        setTimeout(() => {
+          if (card.contains(document.activeElement)) return;
+          enviarEnSegundoPlano(card, i);
+        }, 50);
+      });
+    });
+
+    const btnContinuar = document.getElementById('btn-continuar');
+
+    btnContinuar.addEventListener('click', async () => {
+      const form = document.getElementById('passenger-form');
+      if (!form.reportValidity()) return;
+
+      const cards = container.querySelectorAll('[data-purpose="passenger-form"]');
+      const pasajeros = Array.from(cards).map((card, i) => {
+        const get = (field) => {
+          const el = card.querySelector(`[data-field="${field}"]`);
+          return el ? el.value.trim() : '';
+        };
+        return {
+          tipoDocumento: get('tipoDocumento'),
+          documento: get('documento'),
+          nombres: get('nombres').toUpperCase(),
+          paterno: get('paterno').toUpperCase(),
+          materno: get('materno').toUpperCase(),
+          sexo: get('sexo'),
+          nacimiento: get('nacimiento'),
+          precioVenta: asientos[i].price,
+          email: i === 0 ? get('email').toLowerCase() : (booking.pasajeros && booking.pasajeros[0] && booking.pasajeros[0].email) || '',
+          telefono: i === 0 ? celularContactoActual() : ''
+        };
+      });
+      // Un solo celular de contacto para toda la compra; JELAF lo pide en cada pasajero.
+      const celularContacto = pasajeros[0].telefono;
+      pasajeros.forEach(p => { p.telefono = celularContacto; });
+
+      // Cada pasajero se llena de verdad en su pestaña del worker JELAF antes
+      // de avanzar de pantalla — si uno falla (asiento ya no disponible,
+      // venta expirada) se detiene acá en vez de dejar avanzar con datos que
+      // nunca llegaron a JELAF.
+      const liberarBoton = window.TMT.ocupar(btnContinuar, 'Guardando pasajeros…');
+
+      try {
+        // Los que ya viajaron en segundo plano (y no cambiaron) no se repiten;
+        // los demás se mandan ahora, en orden.
+        for (let i = 0; i < pasajeros.length; i++) {
+          const p = pasajeros[i];
+          if (enviados[i] === firmaDe(p)) continue;
+          if (enPuerta[i]) { try { await enPuerta[i].promesa; } catch (e) { /* se reintenta abajo */ } }
+          if (enviados[i] === firmaDe(p)) continue;
+          await enviarPasajero(i, p);
+        }
+
+        clearInterval(heartbeatInterval);
+        saveBooking({ pasajeros, contacto: { email: pasajeros[0].email, telefono: celularContacto } });
+        window.location.href = 'resumen-compra.html';
+      } catch (err) {
+        // Compra vencida o asiento que ya no está: no hay forma de seguir en
+        // esta pantalla. Se vuelve a elegir asiento (los datos escritos se
+        // conservan) en vez de dejar al cliente reintentando sin salida.
+        if (err.status === 403 || err.status === 409) {
+          alert(err.status === 403
+            ? 'Tu compra expiró por inactividad. Vuelve a elegir tu asiento; tus datos se conservan.'
+            : `${err.message}\nVuelve a elegir tu asiento.`);
+          saveBooking({ pasajeros, asientos: [] });
+          window.location.href = 'seleccionar-asiento.html';
+          return;
+        }
+        alert(`No pudimos guardar los datos de los pasajeros:\n${err.message}`);
+        liberarBoton();
+      }
+    });
+  </script>
+</body></html>

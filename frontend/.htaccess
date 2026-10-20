@@ -1,0 +1,11 @@
+# Mini-webapp TMT (public_html/beta/).
+# Incidente 2026-10-14: sin cabeceras de caché, los celulares siguieron usando
+# un config.js viejo junto con el HTML nuevo ("window.TMT.ocupar is not a
+# function") y el botón Continuar no hacía nada. "no-cache" no impide guardar:
+# obliga a preguntar al servidor si cambió (304 si no), así un despliegue se ve al
+# instante.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed -i 's/pag.select_option\\(\"#origen\", \"TACNA\"\\)/pag.select_option\\(\"#origen\", \"MOQUEGUA\"\\)/; s/buscar-destinos-desde-tacna.png/buscar-destinos-desde-moquegua.png/' captura_buscar.py)",
+      "Bash(python captura_buscar.py)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\)['data']; print\\('habilitadas:', sum\\(s['habilitada'] for s in d['sedes']\\), 'de', len\\(d['sedes']\\)\\); print\\('desde MOQUEGUA:', d['destinos']['MOQUEGUA']\\)\")",
+      "Bash(nslookup transportesmoquegua.com)",
+      "Bash(nslookup -type=ns transportesmoquegua.com)",
+      "Bash(grep -n \"config.js\" *.html)",
+      "Bash(python -c \"import json,sys; [print\\(v['hora_partida'],v['servicio'],'libres=',v['asientos_libres'],'precio=',v['precio_base'],'pend=',v.get\\('precio_pendiente'\\),'bloq=',v['bloqueado'],v['motivo_bloqueo']\\) for v in json.load\\(sys.stdin\\)['data']]\")",
+      "Bash(grep -n \"precio_pendiente\" api_ventas.py)",
+      "Bash(python -c \"import json,sys; [print\\(v['hora_partida'],v['servicio'],'libres=',v['asientos_libres'],'precio=',v['precio_base'],'pend=',v.get\\('precio_pendiente'\\)\\) for v in json.load\\(sys.stdin\\)['data'] if not v['precio_base']]\")",
+      "Bash(grep -n 'No aparece' paneles_web/index.html)"
+    ]
+  }
+}

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Buscar Viaje - WhatsApp Bus</title>
+<!-- CAMUFLAJE PARA PARECER APP NATIVA -->
+<!-- 1. Pinta la barra de notificaciones y la barra del navegador del color oscuro de WhatsApp -->
+<meta name="theme-color" content="#202c33">
+<meta name="msapplication-navbutton-color" content="#202c33">
+<meta name="apple-mobile-web-app-status-bar-style" content="#202c33">
+
+<!-- 2. Le dice al celular que se comporte como una App (esconde barras si es posible) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- 3. Ajusta el contenido hasta los bordes extremos de la pantalla -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            whatsapp: {
+              green: '#25d366',
+              dark: '#121b22',
+              header: '#1f2c34',
+              surface: '#1f2c34',
+              input: '#2a3942'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="custom-background">
+    body {
+      background-color: #0b141a; /* Background base similar to WhatsApp dark mode */
+      color: #e9edef;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Pattern overlay to simulate travel icons background */
+    .travel-pattern-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.05;
+      pointer-events: none;
+      background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); /* Generic pattern placeholder */
+      z-index: 0;
+    }
+
+    /* Main container ensures full height for mobile view */
+    .app-container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100svh;
+      max-width: 500px; /* Centering for desktop preview while keeping mobile look */
+      margin: 0 auto;
+    }
+  </style>
+<style data-purpose="form-elements">
+    /* Custom styling for select and input to match the dark theme in image */
+    .custom-input {
+      background-color: #2a3942;
+      border: 1px solid #3b4a54;
+      border-radius: 12px;
+      padding: 12px 16px;
+      width: 100%;
+      color: #e9edef;
+      appearance: none;
+      font-size: 16px;
+    }
+
+    .custom-input:focus {
+      outline: none;
+      border-color: #25d366;
+    }
+
+    .input-label {
+      color: #8696a0;
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .select-wrapper::after {
+      content: '▼';
+      font-size: 10px;
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #8696a0;
+    }
+
+    /* Chrome ignora el background-color de <input type="date"> aunque le
+       pongamos appearance:none (sigue pintando el fondo blanco nativo).
+       Truco: el fondo oscuro va en el wrapper, y el input queda
+       transparente encima, del ancho completo. */
+    #fecha-wrapper {
+      overflow: hidden;
+    }
+    #fecha {
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      color-scheme: dark;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.6;
+      cursor: pointer;
+    }
+  </style>
+<!-- END: Custom Styles -->
+<script src="config.js?v=2026-10-18b"></script>
+</head>
+<body class="antialiased h-full overflow-hidden">
+<div class="travel-pattern-overlay"></div>
+<!-- BEGIN: MainContainer -->
+<div class="app-container">
+<!-- BEGIN: MainContent -->
+<main class="flex-grow flex flex-col p-6 overflow-y-auto" data-purpose="search-form-container">
+<div class="text-center mb-8">
+<h2 class="text-3xl font-bold text-white mb-2">Buscar viaje</h2>
+<p class="text-gray-400 text-sm">Selecciona origen, destino y fecha</p>
+</div>
+<!-- BEGIN: SearchForm -->
+<section class="space-y-6">
+<!-- Origen Field -->
+<div class="form-group">
+<label class="input-label">Origen</label>
+<div class="relative select-wrapper">
+<select class="custom-input" data-purpose="location-picker" id="origen">
+<option disabled="" selected="" value="">-- Selecciona --</option>
+<option value="LIMA">Lima</option>
+<option value="TACNA">Tacna</option>
+<option value="AREQUIPA">Arequipa</option>
+<option value="CUSCO">Cusco</option>
+</select>
+</div>
+</div>
+<!-- Destino Field -->
+<div class="form-group">
+<label class="input-label">Destino</label>
+<div class="relative select-wrapper">
+<select class="custom-input" data-purpose="location-picker" id="destino">
+<option disabled="" selected="" value="">-- Selecciona --</option>
+<option value="LIMA">Lima</option>
+<option value="TACNA">Tacna</option>
+<option value="AREQUIPA">Arequipa</option>
+<option value="CUSCO">Cusco</option>
+</select>
+</div>
+</div>
+<!-- Fecha Field -->
+<div class="form-group">
+<label class="input-label">Fecha</label>
+<div class="relative custom-input" id="fecha-wrapper" style="padding:0;">
+<input class="custom-input" data-purpose="date-picker" id="fecha" type="date"/>
+</div>
+</div>
+<p class="text-red-400 text-xs hidden" id="form-error">Completa origen, destino y fecha (deben ser distintos).</p>
+</section>
+<!-- END: SearchForm -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: FooterAction -->
+<footer class="p-6 bg-transparent" data-purpose="bottom-action-bar">
+<p class="text-red-400 text-xs mb-3 hidden" id="api-error"></p>
+<button class="w-full bg-whatsapp-green hover:bg-green-500 text-black font-bold py-4 rounded-xl transition-colors text-lg disabled:opacity-60" id="btn-continuar">
+        Continuar
+      </button>
+</footer>
+<!-- END: FooterAction -->
+</div>
+<!-- END: MainContainer -->
+<script data-purpose="simple-interactions">
+    // --- Backend real (api_ventas.py) ---
+    const API_BASE_URL = window.TMT.API_BASE_URL;
+
+    // --- Estado del flujo de compra: sessionStorage = una compra por pestaña ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function saveBooking(partial) {
+      let current = {};
+      try { current = JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; } catch (e) {}
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Object.assign({}, current, partial)));
+    }
+
+    // --- Registro para los paneles (no afecta la compra) -------------------
+    // Esta es la primera pantalla que ve el cliente al tocar el botón en
+    // WhatsApp. Acá se hacen dos cosas que ningún otro punto del flujo puede
+    // hacer:
+    //   1. Guardar el token firmado del teléfono que viene en ?c= — es lo
+    //      único que permite unir después la venta con el contacto de
+    //      WhatsApp (lo necesita el panel de fidelización).
+    //   2. Avisar que el enlace se abrió. Sin esto no hay denominador para
+    //      la conversión: se sabría cuántos compraron, pero no de cuántos.
+    (function registrarAperturaDelEnlace() {
+      let previo = {};
+      try { previo = JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; } catch (e) {}
+
+      const tokenContacto = new URLSearchParams(location.search).get('c') || previo.contactoToken || null;
+      const bookingId = previo.bookingId || crypto.randomUUID();
+      saveBooking({ bookingId, contactoToken: tokenContacto });
+
+      fetch(`${API_BASE_URL}/api/paneles/evento`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId, paso: 'enlace_abierto' }),
+        keepalive: true
+      }).catch(() => {});   // el registro nunca puede estorbar la compra
+    })();
+
+    // N60-SN: si el cliente vuelve (por el botón de WhatsApp, una recarga u otra
+    // pestaña) con un pago abierto, primero se le pregunta si ya pagó, para que
+    // no empiece otra compra y pague dos veces.
+    window.TMT.revisarPagoEnCurso({ contexto: 'regreso' });
+
+    // Fecha por defecto: hoy. min = hoy para no permitir fechas pasadas,
+    // sin max para poder elegir cualquier fecha futura.
+    const fechaInput = document.getElementById('fecha');
+    const hoyISO = window.TMT.hoyLima();
+    fechaInput.value = hoyISO;
+    fechaInput.min = hoyISO;
+
+    // Con appearance:none el navegador no siempre abre el calendario al
+    // tocar el campo, así que lo forzamos por JS (funciona en cualquier
+    // parte del input, no solo si el toque cae sobre el ícono).
+    fechaInput.addEventListener('click', () => {
+      if (typeof fechaInput.showPicker === 'function') {
+        fechaInput.showPicker();
+      }
+    });
+
+    // Sedes y tramos (rutas cortas) vienen del backend (/api/v1/rutas, sacados
+    // del Excel de programación). Mientras cargan, o si fallan, quedan las
+    // cuatro ciudades de siempre que trae el HTML.
+    const origenSelect = document.getElementById('origen');
+    const destinoSelect = document.getElementById('destino');
+    let catalogoRutas = null;
+
+    // Llena un <select> con las sedes dadas, agrupadas en principales y
+    // escalas. Las sedes sin código en JELAF salen deshabilitadas ("pronto").
+    function llenarSelect(select, codigos) {
+      const elegido = select.value;
+      const sedes = catalogoRutas.sedes.filter(s => codigos.includes(s.codigo));
+      select.innerHTML = '<option disabled value="">-- Selecciona --</option>';
+      [['Ciudades principales', true], ['Escalas en ruta', false]].forEach(([titulo, principal]) => {
+        const grupo = sedes.filter(s => s.principal === principal);
+        if (!grupo.length) return;
+        const og = document.createElement('optgroup');
+        og.label = titulo;
+        grupo.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.codigo;
+          opt.textContent = s.habilitada ? s.nombre : `${s.nombre} (pronto)`;
+          opt.disabled = !s.habilitada;
+          og.appendChild(opt);
+        });
+        select.appendChild(og);
+      });
+      const sigue = Array.from(select.options).some(o => o.value === elegido && elegido && !o.disabled);
+      select.value = sigue ? elegido : '';
+    }
+
+    // El destino solo ofrece las ciudades a las que llega algún bus desde el
+    // origen elegido, en ese sentido de la ruta.
+    function actualizarDestinos() {
+      if (!catalogoRutas) return;
+      const origen = origenSelect.value;
+      llenarSelect(destinoSelect, origen ? (catalogoRutas.destinos[origen] || []) : []);
+      destinoSelect.disabled = !origen;
+    }
+
+    fetch(`${API_BASE_URL}/api/v1/rutas`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(body => {
+        catalogoRutas = body.data;
+        llenarSelect(origenSelect, catalogoRutas.sedes.map(s => s.codigo));
+        actualizarDestinos();
+      })
+      .catch(() => {});   // sin catálogo siguen las cuatro ciudades del HTML
+
+    origenSelect.addEventListener('change', actualizarDestinos);
+    destinoSelect.addEventListener('change', () => {
+      // Respaldo para cuando no cargó el catálogo: no permitir ir a la misma ciudad.
+      if (!catalogoRutas && destinoSelect.value === origenSelect.value) destinoSelect.value = '';
+    });
+
+    const btnContinuar = document.getElementById('btn-continuar');
+    const apiError = document.getElementById('api-error');
+
+    btnContinuar.addEventListener('click', async function () {
+      const origen = document.getElementById('origen').value;
+      const destino = document.getElementById('destino').value;
+      const fecha = fechaInput.value;
+      const errorMsg = document.getElementById('form-error');
+      apiError.classList.add('hidden');
+
+      if (!origen || !destino || !fecha || origen === destino) {
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+      // El calendario tiene min=hoy, pero escribiendo a mano se podía poner
+      // una fecha pasada y la pantalla de horarios se rompía.
+      if (fecha < window.TMT.hoyLima()) {
+        apiError.textContent = 'Esa fecha ya pasó. Elige hoy o una fecha futura.';
+        apiError.classList.remove('hidden');
+        return;
+      }
+      errorMsg.classList.add('hidden');
+
+      const liberarBoton = window.TMT.ocupar(btnContinuar, 'Buscando horarios y precios…');
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/buscar-viajes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ origen, destino, fecha })
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.detail || 'No se pudo buscar viajes.');
+
+        const resultados = body.data || [];
+        if (resultados.length === 0) {
+          apiError.textContent = 'No se encontraron viajes para esa ruta y fecha.';
+          apiError.classList.remove('hidden');
+          return;
+        }
+
+        // Una búsqueda nueva invalida todo lo elegido en una pasada anterior
+        // (viaje, asientos bloqueados, pasajeros, monto) — si no se limpia acá,
+        // esos datos viejos quedan pegados en sessionStorage y reaparecen más
+        // adelante en el flujo aunque correspondan a otro bus/ruta.
+        saveBooking({
+          busqueda: {
+            origen, destino, fecha,
+            // Duración del tramo según la programación, para estimar la llegada.
+            duracionMin: (catalogoRutas && catalogoRutas.duraciones[`${origen}-${destino}`]) || null
+          }, resultados,
+          viajeSeleccionado: undefined, asientos: undefined,
+          pasajeros: undefined, montoTotal: undefined, contacto: undefined
+        });
+        window.location.href = 'elegir-horario.html';
+      } catch (err) {
+        apiError.textContent = `${err.message} Inténtalo de nuevo en unos segundos.`;
+        apiError.classList.remove('hidden');
+      } finally {
+        liberarBoton();
+      }
+    });
+  </script>
+</body></html>

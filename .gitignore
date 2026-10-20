@@ -1,0 +1,39 @@
+__pycache__/
+*.pyc
+boletos_generados/
+.venv/
+venv/
+
+# Credenciales y secretos — NUNCA subir
+.env
+.env.*
+!.env.example
+
+# Capturas de red de los scripts de descubrimiento (descubrir_endpoint_*.py):
+# pueden contener datos reales de clientes (nombre, teléfono, fecha de
+# nacimiento) capturados en vivo desde JELAF — nunca deben subirse a este
+# repositorio, que además es público.
+descubrimiento_output/
+
+# Base de datos de los paneles. Contiene DATOS PERSONALES REALES de clientes
+# (documento, nombre completo, teléfono, historial de viajes y montos). Este
+# repositorio es público: el .db NUNCA se sube. Lo que se versiona es el
+# esquema (paneles/esquema.sql), no el contenido.
+paneles/*.db
+paneles/*.db-wal
+paneles/*.db-shm
+*.db
+*.db-wal
+*.db-shm
+
+# Tests
+.pytest_cache/
+
+# Copia de los archivos reemplazados al migrar desde CHATBOT PANELES
+.respaldo_migracion/
+
+# Código de la pantalla de JELAF descargado para entender sus formatos (es de JELAF; repo público)
+codigo_jelaf/
+
+# Pruebas de scroll táctil con Playwright (capturas locales)
+.playwright-mcp/

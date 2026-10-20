@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Checkout Seguro - Transportes Moquegua</title>
+
+  <!-- ETIQUETAS OPEN GRAPH (El truco para que WhatsApp cree la tarjeta visual) -->
+  <meta property="og:title" content="🎫 Compra tu pasaje - Transportes Moquegua">
+  <meta property="og:description" content="Elige tu ruta y fecha para encontrar el viaje que necesitas. Rápido, seguro y sin filas. 📍📅">
+  <meta property="og:type" content="website">
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Hanken Grotesk', 'sans-serif'] },
+          colors: {
+            vibe: {
+              bg: '#0b141b',
+              surface: '#121b22',
+              card: '#1d272f',
+              green: '#25d366',
+              yupi: '#FF4C00',
+            },
+            whatsapp: {
+              header: '#202c33' /* Color extraído del diseño de tu compañero */
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #0b141b; color: white; margin: 0; min-height: 100vh; min-height: 100svh; }
+    .app-shell { max-width: 500px; margin: 0 auto; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; }
+    .loader { border: 3px solid rgba(11, 20, 27, 0.2); border-top: 3px solid #0b141b; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+    .loader-white { border: 3px solid rgba(255, 255, 255, 0.2); border-top: 3px solid #ffffff; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .loader, .animate-spin { animation-duration: 3s; } }
+  </style>
+
+  <!-- El SDK de Yupy y el checkout.js de Niubiz se cargan cuando el cliente
+       elige el medio: la URL la indica el backend según la configuración
+       (YUPY_API, NIUBIZ_CHECKOUT_JS). -->
+<script src="config.js?v=2026-10-18b"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="app-shell">
+
+  <header class="bg-vibe-surface px-4 py-3 flex items-center justify-between border-b border-gray-800">
+    <a href="#" id="btn-back" class="text-vibe-green text-sm font-bold flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      Atrás
+    </a>
+    <span class="text-xs text-gray-400 uppercase tracking-widest font-bold">Pago Seguro</span>
+    <div class="w-16"></div>
+  </header>
+
+  <main class="flex-grow p-4 flex flex-col gap-4">
+
+    <!-- Resumen del Pedido -->
+    <section class="bg-vibe-card rounded-2xl p-5 border border-gray-800 shadow-xl">
+      <div class="flex justify-between items-end mb-3">
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total a pagar</p>
+          <p class="text-3xl font-extrabold text-white" id="monto-total">S/ 0.00</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] text-gray-500 uppercase">Nro. Pedido</p>
+          <p class="text-sm font-mono text-gray-300" id="nro-pedido">—</p>
+        </div>
+      </div>
+      <p class="text-xs text-gray-400" id="ruta-resumen">Cargando ruta...</p>
+    </section>
+
+    <!-- Contenedor Maestro de Pago -->
+    <section class="bg-vibe-surface rounded-2xl p-5 border border-gray-800 flex-grow flex flex-col relative overflow-hidden">
+
+        <!-- Aviso (rechazo de tarjeta, pago vencido...) -->
+        <p id="aviso" class="hidden mb-4 text-sm rounded-xl border border-red-900 bg-red-950/40 text-red-300 p-3" role="alert"></p>
+
+        <!-- Selector de medio de pago -->
+        <div id="selector-medio" class="w-full mb-5">
+            <p class="text-sm text-gray-400 mb-3 text-center">Selecciona tu método de pago</p>
+            <div class="flex gap-3 justify-center">
+                <label id="opcion-yupy" class="flex-1 relative cursor-pointer">
+                    <input type="radio" name="pay_method" value="yupy" class="peer sr-only" checked>
+                    <div class="p-3 border border-gray-700 rounded-xl text-center peer-checked:border-vibe-green peer-checked:bg-vibe-card peer-focus-visible:ring-2 peer-focus-visible:ring-vibe-green transition-colors">
+                        <span class="text-sm font-bold text-white">QR Yape/Plin</span>
+                    </div>
+                </label>
+                <label id="opcion-niubiz" class="flex-1 relative cursor-pointer">
+                    <input type="radio" name="pay_method" value="niubiz" class="peer sr-only">
+                    <div class="p-3 border border-gray-700 rounded-xl text-center peer-checked:border-blue-500 peer-checked:bg-vibe-card peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 transition-colors">
+                        <span class="text-sm font-bold text-white">Tarjeta</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Yupy -->
+        <div id="container-yupy" class="w-full flex flex-col items-center">
+            <div class="flex items-center gap-2 mb-6">
+                <div class="w-8 h-8 rounded bg-vibe-green flex items-center justify-center font-black text-[#0b141b] text-xs">Y!</div>
+                <h3 class="font-bold text-lg text-gray-300">Paga rápido y seguro</h3>
+            </div>
+            <button id="btn-pagar-yupy" class="bg-vibe-green text-[#0b141b] font-bold py-4 px-8 rounded-xl shadow-[0_4px_15px_rgba(37,211,102,0.15)] active:scale-95 transition-all w-full flex items-center justify-center gap-3 disabled:opacity-60">
+                <span id="btn-text-yupy" class="text-lg">Pagar S/ <span class="btn-monto">0.00</span></span>
+                <div id="btn-spinner-yupy" class="loader hidden"></div>
+            </button>
+            <!-- Checkout incrustado (API payment_orders) -->
+            <div id="yupy-payment" class="w-full flex-grow min-h-0 mt-4"></div>
+        </div>
+
+        <!-- Niubiz -->
+        <div id="container-niubiz" class="w-full hidden flex-col items-center">
+            <div class="flex items-center gap-2 mb-6">
+                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-black text-white text-xs">N</div>
+                <h3 class="font-bold text-lg text-gray-300">Pago con Tarjeta</h3>
+            </div>
+            <button id="btn-pre-niubiz" type="button" class="bg-blue-600 text-white font-bold py-4 px-8 rounded-xl shadow-[0_4px_15px_rgba(37,99,235,0.15)] active:scale-95 transition-all w-full flex items-center justify-center gap-3 disabled:opacity-60">
+                <span id="btn-text-niubiz" class="text-lg">Ingresar Tarjeta</span>
+                <div id="btn-spinner-niubiz" class="loader loader-white hidden"></div>
+            </button>
+            <!-- checkout.js de Niubiz pinta aquí su botón y, al pagar, envía este formulario al backend -->
+            <form id="form-niubiz" method="POST" class="w-full flex justify-center mt-4"></form>
+            <!-- N60-SN: al pagar con una billetera el cliente sale de WhatsApp y la página se congela -->
+            <p class="mt-4 text-xs text-gray-400 text-center leading-relaxed">
+                ¿Vas a pagar con <b class="text-gray-200">Yape o Plin</b>? Al terminar, <b class="text-gray-200">vuelve a esta
+                pantalla de WhatsApp</b> y espera la confirmación. Si ya pagaste, no vuelvas a pagar.
+            </p>
+        </div>
+
+        <!-- Error de pasarela -->
+        <div id="error-pasarela" class="hidden flex-grow flex-col items-center justify-center text-center gap-4 px-4">
+            <svg class="w-12 h-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+            <p class="text-white font-bold">No se pudo conectar con la pasarela de pago</p>
+            <p class="text-sm text-gray-400">Por favor recarga la página e intenta de nuevo. Si el problema continúa, comunícate con la empresa.</p>
+            <button onclick="location.reload()" class="mt-2 bg-gray-700 text-white text-sm font-bold py-2 px-6 rounded-xl active:scale-95 transition-transform">
+                Recargar página
+            </button>
+        </div>
+
+    </section>
+
+  </main>
+</div>
+
+<!-- Progreso de la emisión -->
+<div id="progress-overlay" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex-col items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="titulo-progreso">
+    <div class="bg-vibe-card w-full max-w-sm rounded-3xl p-8 border border-gray-800 shadow-2xl">
+        <h2 id="titulo-progreso" class="text-xl font-bold text-white text-center mb-8">Procesando tu viaje</h2>
+        <ol class="relative space-y-8 pl-2" aria-live="polite">
+            <div class="absolute left-[23px] top-4 bottom-4 w-0.5 bg-gray-800 z-0" aria-hidden="true"></div>
+            <li class="relative z-10 flex items-center gap-5" data-paso="1">
+                <div class="paso-icono w-8 h-8 rounded-full bg-gray-800 border-2 border-gray-600 flex items-center justify-center"><div class="w-2 h-2 rounded-full bg-gray-500"></div></div>
+                <div><p class="paso-titulo text-sm font-bold text-gray-400">Validando pago</p><p class="paso-desc text-xs text-gray-500">Confirmando transacción...</p></div>
+            </li>
+            <li class="relative z-10 flex items-center gap-5" data-paso="2">
+                <div class="paso-icono w-8 h-8 rounded-full bg-gray-800 border-2 border-gray-600 flex items-center justify-center"><div class="w-2 h-2 rounded-full bg-gray-500"></div></div>
+                <div><p class="paso-titulo text-sm font-bold text-gray-400">Emitiendo boleto</p><p class="paso-desc text-xs text-gray-500">Conectando con el sistema...</p></div>
+            </li>
+            <li class="relative z-10 flex items-center gap-5" data-paso="3">
+                <div class="paso-icono w-8 h-8 rounded-full bg-gray-800 border-2 border-gray-600 flex items-center justify-center"><div class="w-2 h-2 rounded-full bg-gray-500"></div></div>
+                <div><p class="paso-titulo text-sm font-bold text-gray-400">Boleto generado</p><p class="paso-desc text-xs text-gray-500">Preparando tu pasaje...</p></div>
+            </li>
+        </ol>
+        <p class="text-[11px] text-gray-500 text-center mt-8 leading-snug" id="progreso-nota">No cierres esta ventana. Puede tardar hasta un minuto.</p>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = window.TMT.API_BASE_URL;
+    const STORAGE_KEY = 'vibeTransitBooking';
+
+    function loadBooking() {
+      try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveBooking(partial) {
+      const updated = Object.assign({}, loadBooking(), partial);
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    }
+
+    const booking = loadBooking();
+    if (!booking.viajeSeleccionado || !booking.pasajeros || !booking.bookingId) {
+      window.location.href = 'buscar-viaje.html';
+    }
+
+    // La venta sigue viva en el worker JELAF (asientos + pasajeros ya
+    // cargados) mientras el cliente paga — el heartbeat evita que el reaper
+    // la libere por inactividad en este rato.
+    setInterval(() => {
+      fetch(`${API_BASE_URL}/api/v2/venta/heartbeat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: booking.bookingId })
+      }).catch(() => {});
+    }, 30000);
+
+    // Mientras el cliente paga, el backend deja listo el modal de pago de
+    // JELAF (solo faltará "Aceptar" al aprobarse). Fire-and-forget: si falla,
+    // /confirmar hace el pago completo como siempre.
+    fetch(`${API_BASE_URL}/api/v2/venta/preparar-pago`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: booking.bookingId })
+    }).catch(() => {});
+
+    // El monto que se muestra es solo informativo: lo cobra el servidor.
+    let total = Number(booking.montoTotal) || 0;
+    function mostrarMonto(valor) {
+      total = Number(valor) || 0;
+      document.getElementById('monto-total').textContent = `S/ ${total.toFixed(2)}`;
+      document.querySelectorAll('.btn-monto').forEach(el => el.textContent = total.toFixed(2));
+    }
+    mostrarMonto(total);
+    if (booking.busqueda) {
+      document.getElementById('ruta-resumen').textContent =
+        `${booking.busqueda.origen} a ${booking.busqueda.destino} | ${booking.pasajeros.length} Boleto(s)`;
+    }
+
+    // "Atrás" va siempre al resumen. Antes era history.back(): tras ir y volver
+    // de Niubiz, el historial tiene otra pantalla de pago antes que esta, y el
+    // cliente caía en ella con el formulario de Niubiz ya vencido.
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = 'resumen-compra.html';
+    });
+    // Si el navegador restaura esta pantalla de su memoria (botón atrás del
+    // teléfono), vendría congelada con una sesión de Niubiz vencida: se recarga.
+    window.addEventListener('pageshow', (e) => { if (e.persisted) window.location.reload(); });
+
+    function pedidoPendiente() {
+      const el = document.getElementById('nro-pedido');
+      el.textContent = 'Se genera al ingresar tu tarjeta';
+      el.className = 'text-[11px] text-gray-400 max-w-[9rem] leading-tight';
+    }
+    function mostrarPedido(numero) {
+      const el = document.getElementById('nro-pedido');
+      el.textContent = numero;
+      el.className = 'text-sm font-mono text-gray-300';
+    }
+
+    function avisar(texto) {
+      const el = document.getElementById('aviso');
+      el.textContent = texto;
+      el.classList.toggle('hidden', !texto);
+    }
+
+    function mostrarErrorPasarela() {
+      ['selector-medio', 'container-yupy', 'container-niubiz'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add('hidden'); el.classList.remove('flex');
+      });
+      const err = document.getElementById('error-pasarela');
+      err.classList.remove('hidden'); err.classList.add('flex');
+    }
+
+    function cargarScript(src) {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[data-sdk="${CSS.escape(src)}"]`)) return resolve();
+        const s = document.createElement('script');
+        s.src = src; s.dataset.sdk = src;
+        s.onload = () => resolve(); s.onerror = () => reject(new Error('No cargó el SDK de pago.'));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function postJson(ruta, cuerpo) {
+      const res = await fetch(`${API_BASE_URL}${ruta}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cuerpo)
+      });
+      let datos = {};
+      try { datos = await res.json(); } catch (e) {}
+      if (!res.ok) {
+        const detalle = typeof datos.detail === 'string' ? datos.detail : 'Fallo de comunicación con el servidor.';
+        const error = new Error(detalle); error.status = res.status; throw error;
+      }
+      return datos;
+    }
+
+    // --- Selector de medio ------------------------------------------------
+    function elegirMedio(valor) {
+      const yupy = valor === 'yupy';
+      const cy = document.getElementById('container-yupy');
+      const cn = document.getElementById('container-niubiz');
+      cy.classList.toggle('hidden', !yupy); cy.classList.toggle('flex', yupy);
+      cn.classList.toggle('hidden', yupy); cn.classList.toggle('flex', !yupy);
+      const radio = document.querySelector(`input[name="pay_method"][value="${valor}"]`);
+      if (radio) radio.checked = true;
+    }
+    document.querySelectorAll('input[name="pay_method"]').forEach(radio => {
+      radio.addEventListener('change', (e) => elegirMedio(e.target.value));
+    });
+
+    // Monto y medios disponibles, según el servidor.
+    async function cargarMedios() {
+      try {
+        const datos = await postJson('/api/v2/venta/monto', { booking_id: booking.bookingId });
+        mostrarMonto(datos.monto_total);
+        const medios = datos.medios_pago || { yupy: true, niubiz: false };
+        document.getElementById('opcion-yupy').classList.toggle('hidden', !medios.yupy);
+        document.getElementById('opcion-niubiz').classList.toggle('hidden', !medios.niubiz);
+        if (!medios.yupy && !medios.niubiz) return mostrarErrorPasarela();
+        if (!medios.yupy || !medios.niubiz) document.getElementById('selector-medio').classList.add('hidden');
+        elegirMedio(medios.yupy ? 'yupy' : 'niubiz');
+      } catch (err) {
+        if (err.status === 403) return compraExpirada();
+        avisar(err.message);
+      }
+    }
+
+    // --- Yupy ------------------------------------------------------------
+    document.getElementById('btn-pagar-yupy').addEventListener('click', async function () {
+      const btn = this;
+      const texto = document.getElementById('btn-text-yupy');
+      const spinner = document.getElementById('btn-spinner-yupy');
+      avisar('');
+      btn.disabled = true; spinner.classList.remove('hidden');
+      texto.textContent = 'Generando pago seguro...';
+      const restaurar = () => {
+        btn.disabled = false; spinner.classList.add('hidden');
+        texto.innerHTML = 'Pagar S/ <span class="btn-monto"></span>';
+        texto.querySelector('.btn-monto').textContent = total.toFixed(2);
+      };
+      try {
+        // El servidor calcula el monto con los precios de JELAF y crea el cobro.
+        const data = await postJson('/api/v2/venta/checkout', { booking_id: booking.bookingId });
+        if (data.status === 'ya_pagado') {
+          // Un cobro anterior de esta compra ya se pagó: no se cobra de nuevo.
+          return emitirBoletos(data.referencia_pago || data.yupy_transaction_id, 'YUPY');
+        }
+        if (data.monto_total) mostrarMonto(data.monto_total);
+        if (data.pedido) mostrarPedido(data.pedido);
+        saveBooking({ pagoIniciado: data.yupy_transaction_id || data.pedido || true });
+        recordarPagoEnCurso(data.pedido, 'yupy', data.monto_total);
+        const checkoutUrl = data.checkout_session ? data.checkout_session.checkout_url : null;
+        if (!checkoutUrl || !data.sdk_url) throw new Error('La pasarela no devolvió un enlace de pago.');
+        await cargarScript(data.sdk_url);
+        if (typeof YupyCheckout === 'undefined') throw new Error('No cargó el SDK de Yupy.');
+
+        if (data.modo === 'checkouts') {
+          // QR Yape/Plin en el modal de Yupy (integración del compañero).
+          texto.textContent = 'Esperando pago...'; spinner.classList.add('hidden');
+          // El SDK (sdk.js 1.0.0) resuelve un objeto {status: 'pagado'|'cancelado'|'timeout',
+          // terminal, source}, no el texto suelto: comparar el objeto con 'pagado'
+          // hacía que todo pago terminara como "cancelado". Se acepta también el
+          // texto por si una versión anterior lo devuelve así. Lo que diga el
+          // navegador no basta: /confirmar verifica el pago con Yupy en el servidor.
+          const resultado = await YupyCheckout.open(checkoutUrl);
+          const estado = typeof resultado === 'string' ? resultado : String((resultado && resultado.status) || '');
+          if (estado === 'pagado') return emitirBoletos(data.yupy_transaction_id, 'YUPY_QR');
+          restaurar();
+          avisar(`El pago no se concretó (${estado === 'timeout' ? 'se acabó el tiempo' : 'cancelado'}). Puedes volver a intentarlo.`);
+          return;
+        }
+        // Checkout incrustado (API payment_orders).
+        btn.classList.add('hidden');
+        YupyCheckout.mount({
+          container: '#yupy-payment',
+          checkoutUrl: checkoutUrl,
+          onEvent(event) {
+            if (event.type === 'payment.reconciled') emitirBoletos(data.yupy_transaction_id, 'YUPY');
+          }
+        });
+      } catch (err) {
+        if (err.status === 403) return compraExpirada();
+        restaurar();
+        avisar(err.message || 'No pudimos conectar con la pasarela de pago.');
+      }
+    });
+
+    // --- Niubiz ----------------------------------------------------------
+    document.getElementById('btn-pre-niubiz').addEventListener('click', async function () {
+      const btn = this;
+      const texto = document.getElementById('btn-text-niubiz');
+      const spinner = document.getElementById('btn-spinner-niubiz');
+      avisar('');
+      btn.disabled = true; spinner.classList.remove('hidden');
+      texto.textContent = 'Conectando con Niubiz...';
+      try {
+        const data = await postJson('/api/v2/venta/niubiz/sesion', { booking_id: booking.bookingId });
+        if (data.status === 'ya_pagado') return emitirBoletos(data.referencia_pago, 'NIUBIZ');
+        mostrarMonto(data.monto_total);
+        mostrarPedido(data.pedido);
+        // Se recuerda la referencia para cuando Niubiz devuelva a esta pantalla.
+        saveBooking({ niubizReferencia: data.referencia_pago, pagoIniciado: data.referencia_pago });
+        recordarPagoEnCurso(data.pedido, 'niubiz', data.monto_total);
+
+        // checkout.js pinta su botón dentro del formulario y, al pagar, lo
+        // envía al backend con el transactionToken. El backend hace el cargo
+        // con SU monto (el data-amount de aquí es solo para mostrar).
+        const form = document.getElementById('form-niubiz');
+        form.replaceChildren();
+        form.action = API_BASE_URL + data.action;
+        const script = document.createElement('script');
+        script.src = data.checkout_js;
+        script.setAttribute('data-sessiontoken', data.session_key);
+        script.setAttribute('data-channel', 'web');
+        script.setAttribute('data-merchantid', data.merchant_id);
+        script.setAttribute('data-purchasenumber', data.pedido);
+        script.setAttribute('data-amount', Number(data.monto_total).toFixed(2));
+        script.setAttribute('data-expirationminutes', '15');
+        script.setAttribute('data-timeouturl', `${location.origin}${location.pathname}?niubiz=vencido`);
+        // Mientras baja checkout.js de Niubiz (unos segundos), un indicador en
+        // vez de un hueco vacío; se quita cuando el formulario ya cargó.
+        const cargando = document.createElement('div');
+        cargando.innerHTML = window.TMT.spinner('Cargando el formulario de tarjeta…');
+        form.before(cargando);
+        script.onload = () => setTimeout(() => cargando.remove(), 600);
+        script.onerror = () => { cargando.remove(); avisar('No cargó el formulario de tarjeta. Inténtalo de nuevo.'); btn.classList.remove('hidden'); };
+        btn.classList.add('hidden');
+        form.appendChild(script);
+      } catch (err) {
+        if (err.status === 403) return compraExpirada();
+        avisar(err.message || 'No pudimos conectar con Niubiz.');
+      } finally {
+        btn.disabled = false; spinner.classList.add('hidden');
+        texto.textContent = 'Ingresar Tarjeta';
+      }
+    });
+
+    // --- Progreso --------------------------------------------------------
+    const ICONO_SPIN = '<svg class="animate-spin w-4 h-4 text-[#0b141b]" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>';
+    const ICONO_OK = '<svg class="w-5 h-5 text-[#0b141b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
+    const ICONO_ERROR = '<svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>';
+
+    function mostrarProgreso(visible) {
+      const o = document.getElementById('progress-overlay');
+      o.classList.toggle('hidden', !visible); o.classList.toggle('flex', visible);
+    }
+    function paso(n, estado, descripcion) {
+      const li = document.querySelector(`[data-paso="${n}"]`);
+      const icono = li.querySelector('.paso-icono');
+      const base = 'paso-icono w-8 h-8 rounded-full border-none flex items-center justify-center ';
+      if (estado === 'activo') { icono.className = base + 'bg-vibe-green'; icono.innerHTML = ICONO_SPIN; }
+      if (estado === 'ok') { icono.className = base + 'bg-vibe-green'; icono.innerHTML = ICONO_OK; }
+      if (estado === 'error') { icono.className = base + 'bg-red-500'; icono.innerHTML = ICONO_ERROR; }
+      if (estado === 'espera') {
+        icono.className = 'paso-icono w-8 h-8 rounded-full bg-gray-800 border-2 border-gray-600 flex items-center justify-center';
+        icono.innerHTML = '<div class="w-2 h-2 rounded-full bg-gray-500"></div>';
+        li.querySelector('.paso-titulo').classList.replace('text-white', 'text-gray-400');
+      } else {
+        li.querySelector('.paso-titulo').classList.replace('text-gray-400', 'text-white');
+      }
+      if (descripcion) li.querySelector('.paso-desc').textContent = descripcion;
+    }
+    // /confirmar valida el pago (rápido) y luego emite en JELAF (lo lento) en
+    // una sola llamada. Para que el cliente vea avance, si la respuesta tarda
+    // se pasa a "Emitiendo boleto"; si el pago aún no figura (402) se vuelve atrás.
+    let avanceEmision = null;
+    function animarEmision() {
+      clearTimeout(avanceEmision);
+      avanceEmision = setTimeout(() => {
+        paso(1, 'ok', 'Pago recibido');
+        paso(2, 'activo', 'Registrando tu pasaje en el sistema...');
+      }, 2500);
+    }
+    const pausa = (ms) => new Promise(r => setTimeout(r, ms));
+
+    // N60-SN: nota del pago en curso en localStorage (sin datos personales), para
+    // que sobreviva a que WhatsApp recargue la página o abra otra pestaña.
+    function recordarPagoEnCurso(pedido, proveedor, monto) {
+      const b = loadBooking();
+      const busq = b.busqueda || {};
+      window.TMT.pagoEnCurso.guardar({
+        bookingId: b.bookingId, pedido: pedido || null, proveedor, monto: Number(monto) || null,
+        busqueda: { origen: busq.origen, destino: busq.destino, fecha: busq.fecha },
+        viaje: { hora_viaje: (b.viajeSeleccionado || {}).hora_viaje }
+      });
+    }
+
+    // N59-SN: si esta compra ya abrió un cobro, "expiró" puede no ser cierto: el
+    // conciliador del servidor pudo emitir el boleto mientras el cliente estaba
+    // en la app de Yape, o el pago entró y el equipo ya fue avisado. Antes de
+    // mandarlo a empezar de nuevo (y a pagar otra vez), se le pregunta al servidor.
+    async function compraExpirada() {
+      const previo = loadBooking();
+      if (previo.pagoIniciado || previo.niubizReferencia) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v2/venta/confirmar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ booking_id: previo.bookingId })
+          });
+          let cuerpo = {};
+          try { cuerpo = await res.json(); } catch (e) {}
+          if (res.ok) {
+            saveBooking({
+              pago: { metodo: 'CONFIRMADO', referenciaOperacion: typeof previo.pagoIniciado === 'string' ? previo.pagoIniciado : null, montoTotal: total },
+              boletos: (cuerpo.data && cuerpo.data.boletos) || [],
+              niubizReferencia: null
+            });
+            window.location.href = 'boletos-emitidos.html';
+            return;
+          }
+          if (res.status === 409) {
+            // Se cobró y no se pudo emitir: el equipo ya fue avisado. NO volver a empezar.
+            mostrarProgreso(true);
+            paso(1, 'ok', 'Pago recibido');
+            paso(2, 'error', typeof cuerpo.detail === 'string' ? cuerpo.detail : 'Nuestro equipo revisará tu compra.');
+            return;
+          }
+        } catch (e) {
+          // Sin red: se sigue como antes.
+        }
+      }
+      mostrarProgreso(false);
+      alert('Tu selección de asientos expiró. Vuelve a elegir asiento e inténtalo de nuevo.');
+      sessionStorage.removeItem(STORAGE_KEY);
+      window.location.href = 'buscar-viaje.html';
+    }
+
+    // --- Emisión (pago + cierre sobre la venta ya cargada en el worker) ---
+    // /confirmar verifica el pago servidor a servidor y emite UNA sola vez:
+    // reintentar es seguro.
+    async function emitirBoletos(referencia, metodo, intento = 1) {
+      mostrarProgreso(true);
+      if (intento === 1) paso(1, 'activo');
+      animarEmision();
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v2/venta/confirmar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            booking_id: booking.bookingId,
+            medio_pago: metodo || null,
+            referencia_pago: referencia || null,
+            codigo_descuento: booking.codigoDescuento || null
+          })
+        });
+        let cuerpo = {};
+        try { cuerpo = await res.json(); } catch (e) {}
+        clearTimeout(avanceEmision);
+        if (!res.ok) {
+          const detalle = typeof cuerpo.detail === 'string' ? cuerpo.detail : 'Fallo en la emisión.';
+          // 402/503: la pasarela aún no refleja el pago o no respondió.
+          if ((res.status === 402 || res.status === 503) && intento < 6) {
+            paso(2, 'espera', 'Conectando con el sistema...');
+            paso(1, 'activo', 'Confirmando tu pago...');
+            setTimeout(() => emitirBoletos(referencia, metodo, intento + 1), 3000);
+            return;
+          }
+          if (res.status === 403) return compraExpirada();
+          if (res.status === 409) {
+            // Se cobró y no se pudo emitir: el equipo ya fue avisado. NO se
+            // manda al cliente a empezar de nuevo (volvería a pagar).
+            paso(1, 'ok', 'Pago recibido');
+            paso(2, 'error', detalle);
+            return;
+          }
+          paso(1, 'error', detalle);
+          await pausa(2500);
+          mostrarProgreso(false);
+          avisar(detalle);
+          return;
+        }
+
+        paso(1, 'ok', 'Pago confirmado');
+        paso(2, 'ok', 'Asientos registrados');
+        paso(3, 'ok', 'Te los enviamos a tu correo');
+        saveBooking({
+          pago: { metodo: metodo, referenciaOperacion: referencia, montoTotal: total },
+          boletos: (cuerpo.data && cuerpo.data.boletos) || [],
+          niubizReferencia: null
+        });
+        await pausa(800);
+        window.location.href = 'boletos-emitidos.html';
+      } catch (err) {
+        clearTimeout(avanceEmision);
+        // Sin respuesta (red): reintentar también es seguro.
+        if (intento < 6) {
+          paso(1, 'activo', 'Reconectando...');
+          setTimeout(() => emitirBoletos(referencia, metodo, intento + 1), 3000);
+          return;
+        }
+        paso(1, 'error', 'No pudimos comunicarnos con el servidor.');
+      }
+    }
+
+    // --- Vuelta desde Niubiz (el backend redirige con ?niubiz=...) ------
+    const MENSAJES_NIUBIZ = {
+      denegado: 'Tu tarjeta fue rechazada. Puedes intentar con otra tarjeta o pagar con QR.',
+      vencido: 'El tiempo para pagar con tarjeta venció. Vuelve a ingresar tu tarjeta.',
+      error: 'No pudimos procesar el pago con tarjeta. Si se realizó un cargo, nuestro equipo lo revisará; no vuelvas a pagar sin antes escribirnos.'
+    };
+    const resultadoNiubiz = new URLSearchParams(window.location.search).get('niubiz');
+    if (resultadoNiubiz) window.history.replaceState({}, document.title, window.location.pathname);
+    // Tarjeta rechazada: seguro no hubo cobro, ya no hay pago en curso (N60-SN).
+    if (resultadoNiubiz === 'denegado') window.TMT.pagoEnCurso.borrar(booking.bookingId);
+
+    // Vuelta de un pago con tarjeta aprobado: el progreso se muestra AL INSTANTE
+    // (antes esperaba a recargar los medios de pago y el cliente veía la
+    // pantalla de pago quieta, sin saber si había funcionado).
+    if (resultadoNiubiz === 'ok') emitirBoletos(loadBooking().niubizReferencia, 'NIUBIZ');
+
+    // N60-SN: el cliente vuelve de la app de Yape/Plin. Si el teléfono descartó la
+    // página (document.wasDiscarded, Chrome/Android) o esta compra ya había abierto
+    // un cobro, se le pregunta si ya pagó ANTES de ofrecerle pagar otra vez.
+    function pagoReclamado(texto) {
+      avisar(texto);
+      ['selector-medio', 'container-yupy', 'container-niubiz'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+    }
+    const notaPago = window.TMT.pagoEnCurso.leer();
+    const descartada = document.wasDiscarded === true;
+    if (!resultadoNiubiz && (descartada || (notaPago && notaPago.bookingId === booking.bookingId))) {
+      window.TMT.revisarPagoEnCurso({ bookingId: booking.bookingId, contexto: descartada ? 'descartada' : 'recarga',
+                                      enPago: true, alReclamar: pagoReclamado });
+    }
+    // Al volver a la pantalla sin recargar: avisar al instante que sigue aquí y,
+    // si el servidor ya emitió (lo confirmó la pasarela), ir a los boletos.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      fetch(`${API_BASE_URL}/api/v2/venta/heartbeat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: booking.bookingId })
+      }).catch(() => {});
+      const nota = window.TMT.pagoEnCurso.leer();
+      if (!nota || nota.bookingId !== booking.bookingId) return;
+      fetch(`${API_BASE_URL}/api/v2/venta/estado-pago`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: booking.bookingId, contexto: 'regreso' })
+      }).then(r => r.ok ? r.json() : null).then(e => {
+        if (e && e.estado === 'emitida') window.TMT.revisarPagoEnCurso({ bookingId: booking.bookingId, enPago: true });
+      }).catch(() => {});
+    });
+
+    cargarMedios().then(() => {
+      if (resultadoNiubiz === 'ok') {
+        // ya se está emitiendo (arriba)
+      } else if (MENSAJES_NIUBIZ[resultadoNiubiz]) {
+        // El pedido anterior ya no sirve (Niubiz pide uno nuevo por intento):
+        // se avisa que se genera otro en vez de dejar "—", que parecía un error.
+        elegirMedio('niubiz');
+        pedidoPendiente();
+        avisar(MENSAJES_NIUBIZ[resultadoNiubiz]);
+      }
+    });
+
+</script>
+</body>
+</html>

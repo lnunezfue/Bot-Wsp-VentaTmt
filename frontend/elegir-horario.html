@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Vibe Transit - Resultados de búsqueda</title>
+  
+  <!-- Load Hanken Grotesk Font -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS v3 with plugins -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            whatsapp: '#25d366',
+            surface: '#0b141b',
+            'surface-dim': '#0b141b',
+            'surface-bright': '#313a42',
+            'surface-container': '#141d24',
+            'surface-container-low': '#141d24',
+            'surface-container-lowest': '#060f16',
+          },
+          fontFamily: {
+            sans: ['Hanken Grotesk', 'sans-serif'],
+          },
+          borderRadius: {
+            'custom': '8px',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style data-purpose="custom-layout">
+    body {
+      margin: 0;
+      background-color: #0b141b;
+      color: #ffffff;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .app-shell {
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100svh;
+      position: relative;
+    }
+    .fixed-bottom {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .custom-radio {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #313a42;
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .custom-radio:checked { border-color: #25d366; }
+    .custom-radio:checked::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      background-color: #25d366;
+      border-radius: 50%;
+    }
+  </style>
+<script src="config.js?v=2026-10-18b"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="app-shell">
+
+  <!-- BEGIN: TopBar -->
+  <header class="flex items-center justify-between px-4 pt-4" data-purpose="top-bar">
+    <a href="#" id="btn-back" class="text-whatsapp text-sm font-bold flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      Atrás
+    </a>
+  </header>
+  <!-- END: TopBar -->
+
+  <main class="pb-32">
+    <!-- BEGIN: Route Title Section -->
+    <section class="px-4 pt-6 pb-4 text-center" data-purpose="route-title">
+      <h1 class="text-xl font-bold tracking-wider" id="route-title">Cargando...</h1>
+      <p class="text-gray-400 text-xs mt-1" id="route-subtitle">Selecciona una opción para continuar</p>
+    </section>
+    <!-- END: Route Title Section -->
+    
+    <!-- BEGIN: Date Selector -->
+    <section class="px-4 mb-6 overflow-x-auto no-scrollbar flex gap-2" data-purpose="date-selector" id="date-selector">
+      <!-- Chips de fecha generados por JS -->
+    </section>
+    <!-- END: Date Selector -->
+    
+    <!-- BEGIN: Bus Service List -->
+    <section class="px-4 space-y-4" data-purpose="service-list" id="service-list">
+      <!-- Tarjetas generadas por JS a partir de POST /api/v1/buscar-viajes -->
+    </section>
+    
+    <p class="px-4 text-xs text-gray-500 hidden" id="empty-state">No hay viajes para esta fecha. Prueba otra fecha.</p>
+    <p class="px-4 text-xs text-red-400 hidden" id="list-error"></p>
+    <!-- END: Bus Service List -->
+  </main>
+</div>
+
+<!-- BEGIN: Bottom Action Bar -->
+<footer class="fixed-bottom p-4 bg-surface/95 backdrop-blur-md border-t border-gray-800" data-purpose="bottom-navigation">
+  <button class="w-full bg-whatsapp text-surface-lowest font-bold py-4 rounded-custom text-center transition-transform active:scale-95 disabled:opacity-50" disabled id="btn-continuar">
+    Continuar
+  </button>
+</footer>
+<!-- END: Bottom Action Bar -->
+
+<script>
+    // --- Backend real (api_ventas.py) ---
+    const API_BASE_URL = window.TMT.API_BASE_URL;
+
+    // --- Estado del flujo de compra: sessionStorage = una compra por pestaña ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveBooking(partial) {
+      const updated = Object.assign({}, loadBooking(), partial);
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    }
+
+    let booking = loadBooking();
+    if (!booking.busqueda) {
+      window.location.href = 'buscar-viaje.html';
+    }
+
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.back();
+    });
+
+    const list = document.getElementById('service-list');
+    const emptyState = document.getElementById('empty-state');
+    const listError = document.getElementById('list-error');
+    const btnContinuar = document.getElementById('btn-continuar');
+    const dateSelector = document.getElementById('date-selector');
+
+    // Bus lleno (JELAF: 0 asientos libres; el plano lo confirma: ningún asiento
+    // libre con precio). Antes salía "Precio al elegir tu asiento" y se podía
+    // elegir para llegar a un plano sin nada que comprar (2026-10-14: Lima→Tacna
+    // 12:30 PREMIUM, Lima→Arequipa 18:00 GOLDEN SUITE). Se trata como cerrado.
+    function marcarAgotados(lista) {
+      lista.forEach(s => {
+        if (!s.bloqueado && s.asientos_libres === 0) {
+          Object.assign(s, { bloqueado: true, agotado: true, motivo_bloqueo: 'Todos los asientos de este bus ya están vendidos.' });
+        }
+      });
+      return lista;
+    }
+
+    let resultados = marcarAgotados(booking.resultados || []);
+    let selectedIndex = resultados.findIndex(s => !s.bloqueado);   // nunca uno cerrado por defecto
+
+    // Fix para procesar correctamente las fechas en formato DD/MM/YYYY
+    function fechaLabel(iso) {
+      const partes = iso.includes('/') ? iso.split('/') : iso.split('-');
+      const diaStr = partes[0].length === 4 ? partes[2] : partes[0]; 
+      const mesStr = partes[0].length === 4 ? partes[1] : partes[1];
+      const anioStr = partes[0].length === 4 ? partes[0] : partes[2];
+      
+      const d = new Date(`${anioStr}-${mesStr}-${diaStr}T00:00:00`);
+      const dias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+      const meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+      return { dia: d.getDate(), etiqueta: `${dias[d.getDay()]}, ${meses[d.getMonth()]}` };
+    }
+
+    // 🛠️ MOTOR INTELIGENTE: Calcula horas de llegada estimadas y precios referenciales si el API manda 0
+    function getDetallesRuta(origen, destino, horaPartida, precioBaseAPI) {
+      const origenStr = origen.toUpperCase();
+      const destinoStr = destino.toUpperCase();
+      
+      // Duraciones de referencia. Ya no hay precios fijos aquí: "Desde (aprox.)
+      // S/ 60" salía para cualquier tramo (Lima→Ica cuesta 130+); el precio
+      // "desde" lo calcula el servidor con el plano real del tramo.
+      const rutas = {
+        'LIMA-TACNA': { horas: 22 },
+        'TACNA-LIMA': { horas: 22 },
+        'TACNA-AREQUIPA': { horas: 6 },
+        'AREQUIPA-TACNA': { horas: 6 },
+        'LIMA-AREQUIPA': { horas: 16 },
+        'AREQUIPA-LIMA': { horas: 16 },
+        'DEFAULT': { horas: 12 } // Ruta genérica
+      };
+      
+      const key = `${origenStr}-${destinoStr}`;
+      const info = Object.assign({}, rutas[key] || rutas['DEFAULT']);
+      // Duración real del tramo (rutas cortas), guardada por buscar-viaje.html.
+      const duracionMin = booking.busqueda && booking.busqueda.duracionMin;
+      if (duracionMin > 0) info.horas = duracionMin / 60;
+      // Tramo sin programación (Arequipa→Mollendo, Cusco→Tacna...): mejor
+      // "Por confirmar" que las 12 h genéricas.
+      else if (!rutas[key]) info.horas = null;
+
+      // Sin precio del servidor no se inventa uno: se ve "al elegir asiento".
+      const precioFinal = (precioBaseAPI && precioBaseAPI > 0) ? precioBaseAPI : null;
+
+      // Calculamos hora de llegada sumando las horas
+      let llegadaStr = "Por confirmar";
+      let indicadorDias = "";
+      if (info.horas && horaPartida && horaPartida !== "—") {
+        try {
+          const match = horaPartida.match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/);
+          if (match) {
+            let h = parseInt(match[1]);
+            let m = parseInt(match[2]);
+            let ampm = match[3] ? match[3].toUpperCase() : null;
+
+            if (ampm === 'PM' && h < 12) h += 12;
+            if (ampm === 'AM' && h === 12) h = 0;
+
+            // Se suma la duración en minutos (los tramos tienen medias horas: 14:45).
+            let total = h * 60 + m + Math.round(info.horas * 60);
+            h = Math.floor(total / 60);
+            m = total % 60;
+            let diasExtra = Math.floor(h / 24);
+            h = h % 24;
+
+            let suffix = h >= 12 ? 'pm' : 'am';
+            let h12 = h % 12;
+            if (h12 === 0) h12 = 12;
+
+            llegadaStr = `${h12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${suffix}`;
+            if (diasExtra === 1) indicadorDias = 'Día siguiente';
+            else if (diasExtra > 1) indicadorDias = `+${diasExtra} días`;
+          }
+        } catch(e) {}
+      }
+
+      return { precio: precioFinal, llegada: llegadaStr, indicadorDias, horasViaje: info.horas };
+    }
+
+    // 14.75 → "14h 45m"; 5 → "5h".
+    function formatoDuracion(horas) {
+      const total = Math.round(horas * 60);
+      const h = Math.floor(total / 60), m = total % 60;
+      return m ? `${h}h ${m}m` : `${h}h`;
+    }
+
+    // "06:30AM" → 06:30 + "am" pequeño. Se escapa ANTES de agregar el <span>:
+    // la hora viene del servidor y no se inserta sin escapar (CLAUDE.md).
+    function formatTimeHtml(timeStr) {
+      const texto = window.TMT.esc(timeStr || '—');
+      return texto.replace(/\s*(AM|PM)\b/i, (m, p1) => `<span class="text-[12px] font-normal lowercase ml-0.5">${p1}</span>`);
+    }
+
+    function renderHeader() {
+      document.getElementById('route-title').textContent = `${booking.busqueda.origen} - ${booking.busqueda.destino}`;
+      document.getElementById('route-subtitle').textContent = 'Selecciona una opción para continuar';
+    }
+
+    // Suma/resta días a una fecha ISO (AAAA-MM-DD) sin líos de zona horaria.
+    const sumarDias = window.TMT.sumarDias;
+
+    function renderDateSelector() {
+      dateSelector.innerHTML = '';
+
+      // "Hoy" en hora de Lima (no UTC): de noche se veía ya el día siguiente.
+      const hoyISO = window.TMT.hoyLima();
+      // Una fecha pasada (escrita a mano o de una pestaña vieja) dejaba la lista
+      // de fechas vacía y la pantalla se rompía: se pasa a hoy.
+      if (!booking.busqueda.fecha || booking.busqueda.fecha < hoyISO) {
+        booking = saveBooking({ busqueda: Object.assign({}, booking.busqueda, { fecha: hoyISO }) });
+      }
+      const fechaElegida = booking.busqueda.fecha;
+
+      // 2 días antes + la elegida + 2 días después, sin mostrar fechas pasadas.
+      let fechas = [-2, -1, 0, 1, 2].map(n => sumarDias(fechaElegida, n)).filter(f => f >= hoyISO);
+      while (fechas.length < 5) fechas.push(sumarDias(fechas[fechas.length - 1], 1));
+
+      fechas.forEach(fechaISO => {
+        const { dia, etiqueta } = fechaLabel(fechaISO);
+        const activa = fechaISO === fechaElegida;
+        const chip = document.createElement('div');
+        chip.className = `flex-shrink-0 w-[80px] h-[64px] rounded-custom flex flex-col items-center justify-center cursor-pointer transition-colors ${activa ? 'border-2 border-whatsapp bg-whatsapp/10' : 'bg-surface-container text-gray-400'}`;
+        chip.innerHTML = `
+          <span class="text-lg font-bold leading-tight ${activa ? 'text-white' : ''}">${dia}</span>
+          <span class="text-[10px] uppercase ${activa ? 'text-whatsapp' : ''}">${etiqueta}</span>
+        `;
+        chip.addEventListener('click', () => {
+          if (fechaISO === booking.busqueda.fecha) return;
+          booking = saveBooking({ busqueda: Object.assign({}, booking.busqueda, { fecha: fechaISO }) });
+          buscarViajes();
+        });
+        dateSelector.appendChild(chip);
+      });
+    }
+
+    function renderServicios() {
+      list.innerHTML = '';
+      emptyState.classList.toggle('hidden', resultados.length > 0);
+      btnContinuar.disabled = selectedIndex < 0 || !resultados[selectedIndex] || resultados[selectedIndex].bloqueado;
+      // Todos cerrados en JELAF: se dice antes de la lista para no hacer buscar al cliente.
+      if (resultados.length && resultados.every(s => s.bloqueado)) {
+        const aviso = document.createElement('p');
+        aviso.className = 'text-xs text-amber-300 bg-amber-300/10 border border-amber-300/30 rounded-lg px-3 py-2';
+        aviso.textContent = resultados.every(s => s.agotado)
+          ? 'Todos los buses de esta fecha están llenos. Prueba con otra fecha.'
+          : 'No quedan turnos disponibles para esta fecha (cerrados o llenos). Prueba con otra fecha.';
+        list.appendChild(aviso);
+      }
+
+      resultados.forEach((s, i) => {
+        // Turno cerrado en JELAF (bloqueado por la empresa o sin venta en línea):
+        // se ve, con candado, pero no se puede elegir (boletería tampoco puede venderlo).
+        const cerrado = !!s.bloqueado;
+        // Ejecutamos el motor de estimación para este bus
+        const detalles = getDetallesRuta(booking.busqueda.origen, booking.busqueda.destino, s.hora_partida, s.precio_base);
+
+        const article = document.createElement('article');
+        article.className = `bg-surface-container-low rounded-xl p-5 border ${cerrado ? 'border-gray-800/50 opacity-60 cursor-not-allowed' : (i === selectedIndex ? 'border-whatsapp/60' : 'border-gray-800/50') + ' cursor-pointer'}`;
+        if (cerrado) article.setAttribute('aria-disabled', 'true');
+        article.innerHTML = `
+          <header class="flex justify-between items-center mb-4">
+            <!-- Servicio destacado (pedido de boletería 2026-10-09): es lo que más pesa al elegir. -->
+            <h2 class="inline-flex items-center gap-2 bg-whatsapp/15 border border-whatsapp/50 text-whatsapp rounded-full px-3 py-1.5">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8M6 3h12a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zm1 15v2m10-2v2"/></svg>
+              <span class="text-sm font-black uppercase tracking-wider">${window.TMT.esc(s.servicio || 'Bus Cama')}</span>
+            </h2>
+            ${cerrado ? `<span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-300 bg-amber-300/10 border border-amber-300/40 rounded-full px-2.5 py-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              ${s.agotado ? 'Agotado' : 'Turno cerrado'}</span>` : ''}
+          </header>
+          <div class="grid grid-cols-[auto_1fr_auto] gap-3 items-center mb-6">
+            <div class="space-y-1">
+              <span class="text-[10px] text-gray-500 uppercase">Salida</span>
+              <div class="text-3xl font-bold text-whatsapp tracking-tight">${formatTimeHtml(s.hora_partida || '—')}</div>
+              <div class="text-base font-extrabold uppercase truncate text-gray-100">${window.TMT.esc(booking.busqueda.origen)}</div>
+            </div>
+            <div class="flex flex-col items-center px-2">
+              <span class="text-[10px] text-gray-500 mb-2">${detalles.horasViaje ? `${formatoDuracion(detalles.horasViaje)} de viaje (aprox)` : 'Duración por confirmar'}</span>
+              <div class="relative w-full max-w-[80px] flex items-center justify-center">
+                <div class="h-[1px] bg-gray-600 w-full"></div>
+                <div class="absolute right-0 w-1.5 h-1.5 border-t border-r border-gray-500 rotate-45"></div>
+                <div class="absolute left-0 w-1.5 h-1.5 rounded-full bg-gray-500"></div>
+              </div>
+            </div>
+            <div class="space-y-1 text-right flex flex-col items-end">
+              <span class="text-[10px] text-gray-500 uppercase">Llegada</span>
+              <div class="text-xl font-bold text-white leading-none tracking-tight">${formatTimeHtml(detalles.llegada)}</div>
+              ${detalles.indicadorDias ? `<span class="text-[9px] bg-surface-bright/50 text-gray-300 px-1.5 py-0.5 rounded border border-gray-700/50 mt-1">${detalles.indicadorDias}</span>` : ''}
+              <div class="text-base font-extrabold uppercase truncate mt-1 text-gray-100">${window.TMT.esc(booking.busqueda.destino)}</div>
+            </div>
+          </div>
+          ${cerrado ? `
+          <p class="text-xs text-amber-200/90">${window.TMT.esc(s.motivo_bloqueo || 'Turno cerrado para la venta.')}${s.agotado ? '' : ' No se puede comprar en línea.'}</p>` : `
+          <div class="flex flex-wrap gap-2 mb-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input class="custom-radio" name="service-select" type="radio" ${i === selectedIndex ? 'checked' : ''}/>
+              <span class="bg-surface-bright/30 text-[10px] px-2 py-1.5 rounded-full">${i === selectedIndex ? 'Elegido' : 'Elegir este viaje'}</span>
+            </label>
+          </div>`}
+          <div class="text-right ${cerrado ? 'hidden' : ''}">
+            ${detalles.precio ? `
+            <p class="text-[10px] text-gray-500">Desde</p>
+            <p class="text-2xl font-bold text-whatsapp">
+              <span class="text-sm font-normal">S/</span> ${Number(detalles.precio).toFixed(2)}
+            </p>` : s.precio_pendiente ? `
+            <p class="text-[10px] text-gray-500">Desde</p>
+            <p class="text-sm font-bold text-gray-400 inline-flex items-center gap-2">
+              <span class="inline-block w-3.5 h-3.5 rounded-full border-2 border-whatsapp/30 border-t-whatsapp animate-spin" aria-hidden="true"></span>
+              Calculando…</p>` : `
+            <p class="text-[10px] text-gray-500">Precio</p>
+            <p class="text-sm font-bold text-gray-300">al elegir tu asiento</p>`}
+          </div>
+        `;
+        if (!cerrado) article.addEventListener('click', () => {
+          selectedIndex = i;
+          renderServicios();
+        });
+        list.appendChild(article);
+      });
+    }
+
+    async function buscarViajes() {
+      listError.classList.add('hidden');
+      // Mientras JELAF responde (horarios + precio "desde" de cada uno: puede
+      // tardar unos segundos), tarjetas de carga en vez de una pantalla quieta.
+      const tarjetaCargando = `
+        <div class="bg-surface-container-low rounded-xl p-5 border border-gray-800/50 animate-pulse" aria-hidden="true">
+          <div class="h-6 w-28 rounded-full bg-surface-bright/60 mb-5"></div>
+          <div class="flex justify-between items-end mb-5">
+            <div class="space-y-2"><div class="h-3 w-12 rounded bg-surface-bright/50"></div><div class="h-8 w-24 rounded bg-surface-bright/60"></div></div>
+            <div class="space-y-2 flex flex-col items-end"><div class="h-3 w-12 rounded bg-surface-bright/50"></div><div class="h-6 w-20 rounded bg-surface-bright/60"></div></div>
+          </div>
+          <div class="h-7 w-24 rounded bg-surface-bright/60 ml-auto"></div>
+        </div>`;
+      list.innerHTML = window.TMT.spinner('Buscando horarios y precios…', 'pt-2 pb-1') + tarjetaCargando.repeat(3);
+      btnContinuar.disabled = true;
+      renderHeader();
+      renderDateSelector();
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/buscar-viajes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(booking.busqueda)
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.detail || 'No se pudo buscar viajes.');
+        resultados = marcarAgotados(body.data || []);
+        selectedIndex = resultados.findIndex(s => !s.bloqueado);   // el primero abierto (-1 si todos cerrados)
+        booking = saveBooking({ resultados });
+        renderServicios();
+        llenarPrecios(booking.busqueda.fecha);
+      } catch (err) {
+        list.innerHTML = '';
+        listError.textContent = `${err.message} Inténtalo de nuevo en unos segundos.`;
+        listError.classList.remove('hidden');
+        btnContinuar.disabled = true;
+      }
+    }
+
+    // El servidor calcula los "desde" de a uno en segundo plano (para no trabar
+    // JELAF): la lista sale al instante y aquí se van llenando las tarjetas.
+    let rondaPrecios = 0;
+    async function llenarPrecios(fecha, intento = 0) {
+      const ronda = intento === 0 ? ++rondaPrecios : rondaPrecios;
+      const pendientes = resultados.filter(s => s.precio_pendiente);
+      if (!pendientes.length || intento > 25) {
+        if (pendientes.length) { pendientes.forEach(s => { s.precio_pendiente = false; }); renderServicios(); }
+        return;
+      }
+      await new Promise(r => setTimeout(r, 1500));
+      if (ronda !== rondaPrecios) return;            // el cliente cambió de fecha: esta ronda ya no sirve
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/precios-desde`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fecha, viajes: pendientes.map(s => ({
+            id_programacion: s.id_programacion, codi_origen: s.codi_origen, codi_destino: s.codi_destino })) })
+        });
+        if (res.ok && ronda === rondaPrecios) {
+          const { precios } = await res.json();
+          let cambio = false;
+          pendientes.forEach(s => {
+            const p = precios[String(s.id_programacion)];
+            if (!p || p.pendiente) return;
+            Object.assign(s, { precio_base: p.precio_base, precio_pendiente: false });
+            if (p.bloqueado) Object.assign(s, { bloqueado: true, motivo_bloqueo: p.motivo_bloqueo });
+            cambio = true;
+          });
+          if (cambio) {
+            // Si el elegido resultó cerrado, se pasa al primero abierto.
+            if (selectedIndex >= 0 && resultados[selectedIndex] && resultados[selectedIndex].bloqueado) {
+              selectedIndex = resultados.findIndex(s => !s.bloqueado);
+            }
+            booking = saveBooking({ resultados });
+            renderServicios();
+          }
+        }
+      } catch (e) { /* sin red: se reintenta */ }
+      llenarPrecios(fecha, intento + 1);
+    }
+
+    btnContinuar.addEventListener('click', function () {
+      if (resultados.length === 0 || selectedIndex < 0 || resultados[selectedIndex].bloqueado) return;
+
+      const viajeElegido = resultados[selectedIndex];
+
+      const viajeSeleccionadoParaPlano = {
+        id_programacion: viajeElegido.id_programacion,
+        nro_viaje: viajeElegido.nro_viaje,
+        codi_empresa: viajeElegido.codi_empresa,
+        codi_origen: viajeElegido.codi_origen,
+        codi_destino: viajeElegido.codi_destino,
+        codi_sucursal: viajeElegido.codi_sucursal,
+        codi_ruta: viajeElegido.codi_ruta,
+        codi_punto_venta: viajeElegido.codi_punto_venta,
+        codi_servicio: viajeElegido.codi_servicio,
+        fecha_viaje: booking.busqueda.fecha, 
+        hora_viaje: viajeElegido.hora_partida,
+        placa_bus: viajeElegido.placa,
+        servicio: viajeElegido.servicio || null, // se muestra destacado en la pantalla de asientos
+        precio_base: viajeElegido.precio_base // El precio base que llega del JSON
+      };
+
+      // Elegir un viaje distinto invalida los asientos/pasajeros de una pasada
+      // anterior (son de otro bus, con otro plano) — se limpian acá para que
+      // no reaparezcan pre-seleccionados en la siguiente pantalla.
+      // El id lo crea la PRIMERA pantalla (buscar-viaje.html) al abrirse el
+      // enlace, y acá se reutiliza: así el embudo del panel puede unir
+      // "abrió el enlace" con "eligió un viaje" en una sola sesión. Si el
+      // cliente cambia de viaje después de haber elegido uno, se genera uno
+      // nuevo igual que antes — ese caso sí es otra venta para el pool.
+      const viajePrevio = booking.viajeSeleccionado;
+      const mismoViaje = viajePrevio
+        && viajePrevio.id_programacion === viajeSeleccionadoParaPlano.id_programacion
+        && viajePrevio.hora_viaje === viajeSeleccionadoParaPlano.hora_viaje;
+      const bookingId = (booking.bookingId && (!viajePrevio || mismoViaje))
+        ? booking.bookingId
+        : crypto.randomUUID();
+      saveBooking({
+        viajeSeleccionado: viajeSeleccionadoParaPlano,
+        asientos: undefined, pasajeros: undefined,
+        montoTotal: undefined, contacto: undefined,
+        // Compra nueva: el cobro abierto de la anterior no es de esta (pago.html, N59-SN).
+        ...(bookingId !== booking.bookingId ? { pagoIniciado: undefined, niubizReferencia: undefined } : {}),
+        bookingId
+      });
+
+      // Reserva un worker del pool y le manda buscar este viaje en JELAF EN
+      // SEGUNDO PLANO, sin esperar la respuesta ni bloquear la navegación:
+      // para cuando el cliente llegue a la pantalla de asientos y toque el
+      // primero, la búsqueda real ya habrá terminado (o esté por terminar)
+      // en vez de recién empezar en ese momento — ver
+      // docs/architecture.md#prefetch-de-la-busqueda-del-viaje. Si esto
+      // falla en silencio (red, pool ocupado), seleccionar-asiento.html
+      // reintenta igual al tocar el primer asiento, solo que sin la ventaja
+      // de velocidad.
+      // keepalive: true es imprescindible acá — sin esto el navegador CANCELA
+      // la petición al navegar (window.location.href, dos líneas más abajo),
+      // porque ocurre en el mismo instante. Confirmado en vivo: sin
+      // keepalive, /iniciar casi nunca llegaba a tocar el backend y todo el
+      // prefetch quedaba sin efecto en la práctica.
+      fetch(`${API_BASE_URL}/api/v2/venta/iniciar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          booking_id: bookingId,
+          codi_origen: Number(viajeSeleccionadoParaPlano.codi_origen),
+          fecha_viaje: viajeSeleccionadoParaPlano.fecha_viaje,
+          hora_viaje: viajeSeleccionadoParaPlano.hora_viaje,
+          // Con estos códigos el backend consulta en JELAF el precio real de
+          // cada asiento; el precio que muestra esta pantalla es solo informativo.
+          viaje: {
+            codi_empresa: Number(viajeSeleccionadoParaPlano.codi_empresa) || 0,
+            codi_destino: Number(viajeSeleccionadoParaPlano.codi_destino) || 0,
+            codi_sucursal: Number(viajeSeleccionadoParaPlano.codi_sucursal) || 0,
+            codi_ruta: Number(viajeSeleccionadoParaPlano.codi_ruta) || 0,
+            codi_punto_venta: Number(viajeSeleccionadoParaPlano.codi_punto_venta) || 0,
+            codi_servicio: Number(viajeSeleccionadoParaPlano.codi_servicio) || 0
+          },
+          // Solo para el registro de los paneles. El backend no conocía el
+          // destino ni el servicio: vivían únicamente acá, en el sessionStorage.
+          destino: (booking.busqueda && booking.busqueda.destino) || null,
+          servicio: viajeElegido.servicio || null,
+          placa_bus: viajeSeleccionadoParaPlano.placa_bus || null,
+          contacto: booking.contactoToken || null
+        }),
+        keepalive: true
+      }).catch(() => {});
+
+      window.location.href = 'seleccionar-asiento.html';
+    });
+
+    renderHeader();
+    renderDateSelector();
+    
+    if (resultados.length > 0) {
+      renderServicios();
+      llenarPrecios(booking.busqueda.fecha);   // vienen del buscador: se llenan los que faltan
+    } else {
+      buscarViajes();
+    }
+</script>
+</body>
+</html>

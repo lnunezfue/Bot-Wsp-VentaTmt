@@ -1,0 +1,272 @@
+{
+  "plantillas": {
+    "023-32": {
+      "servicio": "GOLDEN SUITE",
+      "pisos": {
+        "1": {
+          "rows": [
+            [
+              {
+                "type": "seat",
+                "id": "03",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "06",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "09",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "12",
+                "angle": "160"
+              }
+            ],
+            [
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "02",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "05",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "08",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "11",
+                "angle": "160"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "01",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "04",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "07",
+                "angle": "160"
+              },
+              {
+                "type": "seat",
+                "id": "10",
+                "angle": "160"
+              }
+            ]
+          ]
+        },
+        "2": {
+          "rows": [
+            [
+              {
+                "type": "seat",
+                "id": "15",
+                "angle": "180"
+              },
+              {
+                "type": "stairs"
+              },
+              {
+                "type": "seat",
+                "id": "20",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "23",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "26",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "29",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "32",
+                "angle": "180"
+              }
+            ],
+            [
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              },
+              {
+                "type": "empty"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "14",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "17",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "19",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "22",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "25",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "28",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "31",
+                "angle": "180"
+              }
+            ],
+            [
+              {
+                "type": "seat",
+                "id": "13",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "16",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "18",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "21",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "24",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "27",
+                "angle": "180"
+              },
+              {
+                "type": "seat",
+                "id": "30",
+                "angle": "180"
+              }
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "placas": {
+    "C7U951": "023-32",
+    "C7W950": "023-32",
+    "VAA959": "023-32",
+    "CZM496": "023-32"
+  }
+}

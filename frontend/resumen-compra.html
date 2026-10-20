@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Resumen de Compra - Vibe Transit</title>
+<!-- Google Fonts: Hanken Grotesk -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#25d366',
+            surface: '#0b141b',
+            'surface-dim': '#0b141b',
+            'surface-bright': '#313a42',
+            'surface-container-low': '#141d24',
+            'surface-container': '#1b262e',
+          },
+          fontFamily: {
+            sans: ['"Hanken Grotesk"', 'sans-serif'],
+          },
+          borderRadius: {
+            'vibe': '8px',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-styles">
+    body {
+      margin: 0;
+      background-color: #0b141b;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+      background-size: 24px 24px;
+      color: #ffffff;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .app-shell {
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100svh;
+      position: relative;
+      padding-bottom: 8rem;
+    }
+    .fixed-bottom {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #313a42;
+      border-radius: 10px;
+    }
+  </style>
+<script src="config.js?v=2026-10-18b"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="app-shell">
+<!-- BEGIN: TopBar -->
+<header class="flex items-center justify-between px-4 pt-4" data-purpose="top-bar">
+<a href="#" id="btn-back" class="text-brand text-sm font-bold flex items-center gap-1">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+Atrás
+</a>
+</header>
+<!-- END: TopBar -->
+<main class="p-4 space-y-6">
+<!-- BEGIN: HeaderSection -->
+<section class="text-center space-y-1 pt-2" data-purpose="page-title">
+<h2 class="text-2xl font-bold">Resumen de Compra</h2>
+<p class="text-sm text-gray-400">Revisa tu información antes de continuar al pago</p>
+</section>
+<!-- END: HeaderSection -->
+<!-- BEGIN: DetalleViaje -->
+<section class="bg-surface-container-low rounded-vibe p-5 border border-white/5" data-purpose="trip-details">
+<div class="flex items-center gap-2 mb-4">
+<h3 class="text-xs font-bold text-brand tracking-widest uppercase">Detalles del Viaje</h3>
+</div>
+<div class="space-y-3" id="trip-details-body"></div>
+</section>
+<!-- END: DetalleViaje -->
+<!-- BEGIN: Pasajeros -->
+<section class="bg-surface-container-low rounded-vibe p-5 border border-white/5" data-purpose="passenger-list">
+<div class="flex items-center gap-2 mb-4">
+<h3 class="text-xs font-bold text-brand tracking-widest uppercase">Pasajeros</h3>
+</div>
+<div class="space-y-3" id="passenger-list-body"></div>
+</section>
+<!-- END: Pasajeros -->
+<!-- BEGIN: PagoFacturacion -->
+<section class="bg-surface-container-low rounded-vibe p-5 border border-white/5 space-y-6" data-purpose="payment-billing">
+<div class="flex items-center gap-2">
+<h3 class="text-xs font-bold text-brand tracking-widest uppercase">Pago y Facturación</h3>
+</div>
+<div class="space-y-4">
+<!-- Comprobante: boleta por defecto; con factura, una por asiento al mismo RUC (2026-10-13). -->
+<div class="space-y-3">
+<h4 class="text-xs font-bold text-gray-300 uppercase tracking-wide">Comprobante</h4>
+<div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de comprobante">
+<button class="py-3 rounded-vibe text-sm font-bold border transition-colors" data-comprobante="boleta" role="radio" type="button">Boleta</button>
+<button class="py-3 rounded-vibe text-sm font-bold border transition-colors" data-comprobante="factura" role="radio" type="button">Factura</button>
+</div>
+<div class="space-y-3 hidden" id="datos-factura">
+<div>
+<label class="text-xs text-gray-400" for="factura-ruc">RUC (10 o 20)</label>
+<div class="flex gap-2 mt-1">
+<input autocomplete="off" class="flex-1 min-w-0 bg-surface-container border-none text-sm rounded-vibe py-3 px-4 focus:ring-1 focus:ring-brand" id="factura-ruc" inputmode="numeric" maxlength="11" placeholder="11 dígitos" type="text"/>
+<button class="shrink-0 bg-surface-container text-brand font-bold text-xs uppercase rounded-vibe px-4 disabled:opacity-50" id="btn-buscar-ruc" type="button">Buscar</button>
+</div>
+<p class="text-xs mt-1 hidden" id="factura-estado"></p>
+</div>
+<div>
+<label class="text-xs text-gray-400" for="factura-razon">Razón social</label>
+<input class="w-full mt-1 bg-surface-container border-none text-sm rounded-vibe py-3 px-4 uppercase focus:ring-1 focus:ring-brand" id="factura-razon" maxlength="100" type="text"/>
+</div>
+<div>
+<label class="text-xs text-gray-400" for="factura-direccion">Dirección fiscal (opcional)</label>
+<input class="w-full mt-1 bg-surface-container border-none text-sm rounded-vibe py-3 px-4 uppercase focus:ring-1 focus:ring-brand" id="factura-direccion" maxlength="200" type="text"/>
+</div>
+<p class="text-[11px] text-gray-500 leading-snug">Se emite una factura por cada pasaje, todas a este RUC. Cada pasajero viaja con su propio documento.</p>
+</div>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-gray-300 uppercase tracking-wide">Datos de Contacto</h4>
+<span class="text-xs text-gray-400">Celular: <b id="contact-phone" class="text-gray-200">—</b></span>
+<br/><label class="text-xs text-gray-300 font-semibold" for="contact-email">Correo electrónico <span class="text-brand">*</span></label>
+<p class="text-[11px] text-gray-500 leading-snug">Aquí te enviaremos tus boletos en PDF.</p>
+<input autocomplete="email" class="w-full bg-surface-container border-none text-sm rounded-vibe py-3 px-4 lowercase focus:ring-1 focus:ring-brand" id="contact-email" inputmode="email" placeholder="tucorreo@ejemplo.com" required="" type="email"/>
+<p class="text-xs text-red-400 hidden" id="error-email"></p>
+<p class="text-xs text-amber-300 hidden" id="sugerencia-email"></p>
+</div>
+<label class="flex items-center gap-3 cursor-pointer pt-2">
+<input class="w-5 h-5 bg-white border-2 border-gray-400 rounded text-brand focus:ring-brand focus:ring-offset-0 transition-colors" id="chk-terminos" type="checkbox"/>
+<span class="text-xs text-gray-400 leading-tight">He leído y acepto los <button class="text-white font-semibold underline underline-offset-2" id="link-terminos" type="button">Términos y Condiciones</button> y la <span class="text-white font-semibold">Política de Privacidad</span></span>
+</label>
+</div>
+</section>
+<!-- END: PagoFacturacion -->
+</main>
+</div>
+<!-- BEGIN: StickyFooter -->
+<footer class="fixed-bottom bg-[#121b22] border-t border-gray-800 p-4 pb-6 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]" data-purpose="sticky-bottom-bar">
+<p class="text-red-400 text-xs mb-3 hidden" id="checkout-error"></p>
+<div class="flex justify-between items-center mb-4">
+<span class="text-white font-bold">Total a Pagar</span>
+<span class="text-brand text-xl font-extrabold tracking-tight" id="total-a-pagar">S/ 0.00</span>
+</div>
+<button class="w-full bg-brand text-surface font-black py-4 rounded-vibe uppercase tracking-wider text-sm shadow-lg active:scale-[0.98] transition-transform disabled:opacity-50" disabled="" id="btn-continuar">
+      Continuar al pago
+    </button>
+</footer>
+<!-- BEGIN: MenorEdadModal -->
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/70 backdrop-blur-sm px-6" data-purpose="minor-warning-modal" id="modal-menor-edad">
+<div class="w-full max-w-sm bg-surface-container-low border border-white/10 rounded-vibe p-6 text-center shadow-2xl">
+<h3 class="text-base font-bold text-white mb-3">Aviso Importante</h3>
+<p class="text-sm text-gray-400 leading-relaxed mb-6">
+      Los pasajeros menores de 18 años deben viajar acompañados por un adulto o contar con la autorización de viaje correspondiente. Por favor, confirma que cumples con este requisito antes de continuar.
+    </p>
+<div class="space-y-3">
+<button class="w-full bg-brand text-surface font-black py-3 rounded-vibe uppercase tracking-wider text-sm active:scale-[0.98] transition-transform" id="btn-confirmar-menor">
+        Confirmar y continuar
+      </button>
+<button class="w-full bg-transparent text-gray-400 font-semibold py-2 text-xs uppercase tracking-wide" id="btn-volver-menor">
+        Volver y modificar
+      </button>
+</div>
+</div>
+</div>
+<!-- END: MenorEdadModal -->
+<!-- BEGIN: TerminosModal -->
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/70 backdrop-blur-sm px-4" data-purpose="terms-modal" id="modal-terminos">
+<div class="w-full max-w-sm bg-surface-container-low border border-white/10 rounded-vibe shadow-2xl flex flex-col" style="max-height: 85vh; max-height: 85svh;">
+<div class="flex items-center justify-between p-5 pb-3 border-b border-white/10 shrink-0">
+<h3 class="text-sm font-bold text-white">Términos y Condiciones</h3>
+<button aria-label="Cerrar" class="text-gray-400 hover:text-white text-xl leading-none px-1" id="btn-cerrar-terminos" type="button">×</button>
+</div>
+<div class="overflow-y-auto overscroll-contain px-5 py-4 space-y-5" id="terminos-scroll-body">
+      
+      <!-- AVISO DE MENORES INTEGRADO -->
+      <div class="bg-brand/10 border border-brand/30 rounded-vibe p-3 mb-2">
+        <p class="text-sm text-white font-bold leading-relaxed">
+          <span class="text-brand uppercase tracking-wider text-xs block mb-1">Aviso Importante</span>
+          Los pasajeros menores de 18 años deben viajar acompañados por un adulto o contar con la autorización de viaje notarial correspondiente.
+        </p>
+      </div>
+
+<p class="text-xs text-gray-400 leading-relaxed">
+        Resumen de las condiciones del <span class="text-white font-semibold">Contrato de Transporte de Pasajeros de Transportes Moquegua Turismo S.R.L.</span> Al comprar tu boleto, aceptas estas condiciones. El texto legal completo está en los <a class="text-brand underline font-semibold" href="https://transportesmoquegua.com/terminos-pasajes.html" rel="noopener" target="_blank">Términos y Condiciones completos</a>.
+      </p>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Compra y datos del pasajero</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Verifica tus datos (nombres, documento, fecha de nacimiento, ruta, asiento, fecha y comprobante) antes de confirmar. <span class="text-white font-bold">Una vez emitido el boleto, no hay devolución</span> por errores de registro.</li>
+<li>Si compras por WhatsApp: no pagues sin confirmar disponibilidad de asientos, y envía la captura del pago dentro de los 5 minutos después de separar tu asiento.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Cambios y postergaciones</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Solo puede tramitarlos el titular del boleto, de forma <span class="text-white font-bold">presencial</span>, hasta 4 horas antes del viaje, presentando DNI y boleto.</li>
+<li>Excepcionalmente, por fuerza mayor, puedes solicitar la postergación por WhatsApp al <span class="text-white font-bold">953 954 708</span> (5:00 a. m. – 11:00 p. m.), dentro del mismo plazo de 4 horas.</li>
+<li>Pasado el plazo se aplican penalidades (20% a 50% del costo del boleto según cuánto te excedas).</li>
+<li>La postergación sin costo solo aplica dentro del plazo; cambios de titularidad, ruta u horario tienen un costo adicional.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Devoluciones</h4>
+<p class="text-xs text-gray-400 leading-relaxed">Solo se devuelve el costo del boleto si la empresa anula el servicio o te reubica en otro servicio y no aceptas la reubicación.</p>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Seguro y boleto físico</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Viajas con Seguro Obligatorio de Accidentes de Tránsito (SOAT) de MAPFRE Perú.</li>
+<li>Si pierdes tu boleto, puedes pedir reimpresión en el punto de embarque (llega 30 min antes); desde la segunda reimpresión hay un costo adicional.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Embarque y documentos</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Preséntate <span class="text-white font-bold">30 minutos antes</span> con tu boleto y documento de identidad físico; si no llegas a tiempo, pierdes el boleto y el asiento se libera.</li>
+<li>Menores de edad que viajan solos necesitan autorización notarial. Gestantes desde 8 meses necesitan certificado médico de viaje.</li>
+<li>No se permite embarcar bajo efectos de alcohol/drogas, sin documentos completos, o si tu condición de salud impide viajar sin acompañante.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Equipaje</h4>
+<ul class="text-xs text-gray-400 leading-relaxed list-disc pl-4 space-y-1">
+<li>Equipaje de mano: hasta 8 kg (bolso o maletín pequeño).</li>
+<li>Equipaje de bodega: hasta 20 kg sin costo (2 piezas); el exceso se cobra según tarifario.</li>
+<li>No se permiten armas, sustancias peligrosas ni artículos punzocortantes. La empresa no responde por objetos de valor no declarados ni por equipaje mal embalado.</li>
+</ul>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Mascotas</h4>
+<p class="text-xs text-gray-400 leading-relaxed">Se permite el transporte de mascotas en bodega dentro de un kennel adecuado, bajo tu responsabilidad. Los perros guía o de asistencia emocional acreditados por CONADIS viajan en la cabina, en asiento contiguo a la ventana, con la documentación correspondiente.</p>
+</div>
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-brand tracking-widest uppercase">Casos de fuerza mayor</h4>
+<p class="text-xs text-gray-400 leading-relaxed">Ante desastres naturales, bloqueos de vía u órdenes de autoridad, el viaje puede interrumpirse o suspenderse. Tu boleto queda con fecha abierta o puedes transferirlo a otra persona; la empresa no responde por demoras ajenas a su control.</p>
+</div>
+<p class="text-xs text-gray-400 leading-relaxed pt-1 border-t border-white/10">
+        Este es un resumen. Lee los <a class="text-brand underline font-semibold" href="https://transportesmoquegua.com/terminos-pasajes.html" rel="noopener" target="_blank">Términos y Condiciones completos</a>.
+      </p>
+</div>
+<div class="p-5 pt-4 border-t border-white/10 shrink-0">
+<p class="text-[10px] text-gray-500 text-center mb-3 hidden" id="terminos-scroll-hint">Desplázate hasta el final para poder aceptar</p>
+<button class="w-full bg-brand text-surface font-black py-3 rounded-vibe uppercase tracking-wider text-sm shadow-lg active:scale-[0.98] transition-transform disabled:opacity-50" disabled="" id="btn-aceptar-terminos">
+        He leído y acepto
+      </button>
+</div>
+</div>
+</div>
+<!-- END: TerminosModal -->
+<script>
+    // --- Backend real (api_ventas.py) ---
+    const API_BASE_URL = window.TMT.API_BASE_URL;
+
+    // --- Estado del flujo de compra: sessionStorage = una compra por pestaña ---
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveBooking(partial) {
+      const updated = Object.assign({}, loadBooking(), partial);
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    }
+
+    const booking = loadBooking();
+
+    // Mientras el cliente revisa el resumen y lee términos y condiciones
+    // (puede tardar), avisamos que la venta sigue viva para que el worker
+    // JELAF no se libere por inactividad.
+    if (booking.bookingId) {
+      setInterval(() => {
+        fetch(`${API_BASE_URL}/api/v2/venta/heartbeat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: booking.bookingId })
+        }).catch(() => {});
+      }, 30000);
+    }
+
+    const busqueda = booking.busqueda || {};
+    
+    // 🛠️ CORRECCIÓN 1: Leer viajeSeleccionado
+    const viaje = booking.viajeSeleccionado || {}; 
+    const asientos = booking.asientos || [];
+    const pasajeros = booking.pasajeros || [];
+    const total = asientos.reduce((sum, a) => sum + (a.price || 0), 0);
+
+    // 🛠️ CORRECCIÓN 2: Usar viaje.hora_viaje
+    document.getElementById('trip-details-body').innerHTML = `
+      <div class="flex justify-between items-center border-b border-white/10 pb-2">
+        <span class="text-sm text-gray-400">Ruta</span>
+        <span class="font-bold text-sm uppercase">${window.TMT.esc(busqueda.origen || '—')} - ${window.TMT.esc(busqueda.destino || '—')}</span>
+      </div>
+      <div class="flex justify-between items-center border-b border-white/10 pb-2">
+        <span class="text-sm text-gray-400">Fecha</span>
+        <span class="font-bold text-sm">${window.TMT.esc(busqueda.fecha || '—')}</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-400">Itinerario</span>
+        <span class="font-bold text-sm uppercase">${window.TMT.esc(viaje.hora_viaje || '—')} - Bus Cama</span>
+      </div>
+    `;
+
+    document.getElementById('passenger-list-body').innerHTML = (pasajeros.length ? pasajeros : []).map((p, i) => `
+      <div class="bg-surface-container rounded-vibe p-4 border border-white/5">
+        <p class="font-bold text-sm uppercase leading-tight">${window.TMT.esc(p.nombres || '')} ${window.TMT.esc(p.paterno || '')} ${window.TMT.esc(p.materno || '')}</p>
+        <p class="text-xs text-gray-400 mt-1">DNI ${window.TMT.esc(p.documento || '—')} | Asiento ${window.TMT.esc((asientos[i] && asientos[i].id) || '—')}</p>
+      </div>
+    `).join('') || '<p class="text-xs text-gray-500">No hay pasajeros registrados. Vuelve al paso anterior.</p>';
+
+    document.getElementById('contact-email').value = (booking.contacto && booking.contacto.email) || (pasajeros[0] && pasajeros[0].email) || '';
+    document.getElementById('contact-phone').textContent = (booking.contacto && booking.contacto.telefono) || (pasajeros[0] && pasajeros[0].telefono) || '—';
+    document.getElementById('total-a-pagar').textContent = `S/ ${total.toFixed(2)}`;
+
+    const btnContinuar = document.getElementById('btn-continuar');
+    const chkTerminos = document.getElementById('chk-terminos');
+    const checkoutError = document.getElementById('checkout-error');
+    
+    function refreshContinueState() {
+      btnContinuar.disabled = !(chkTerminos.checked && pasajeros.length > 0);
+    }
+    refreshContinueState();
+
+    // Como en la versión del compañero (CHATBOT PRUEBA 10-11.html): marcar la
+    // casilla abre la ventana de términos; solo queda marcada al presionar
+    // "Aceptar", que se habilita al bajar hasta el final del texto.
+    chkTerminos.addEventListener('click', (e) => {
+      if (chkTerminos.checked) {
+        e.preventDefault();
+        abrirModalTerminos();
+      } else {
+        refreshContinueState();
+      }
+    });
+
+    document.getElementById('btn-back').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.history.back();
+    });
+
+    const modalTerminos = document.getElementById('modal-terminos');
+    const linkTerminos = document.getElementById('link-terminos');
+    const btnCerrarTerminos = document.getElementById('btn-cerrar-terminos');
+    const btnAceptarTerminos = document.getElementById('btn-aceptar-terminos');
+    const terminosScrollBody = document.getElementById('terminos-scroll-body');
+    const terminosScrollHint = document.getElementById('terminos-scroll-hint');
+
+    function abrirModalTerminos() {
+      modalTerminos.classList.remove('hidden');
+      modalTerminos.classList.add('flex');
+      terminosScrollBody.scrollTop = 0;
+      btnAceptarTerminos.disabled = true;
+      terminosScrollHint.classList.remove('hidden');
+      // Pantalla alta: si el texto entra completo no hay nada que deslizar y
+      // el botón nunca se habilitaba.
+      requestAnimationFrame(checkTerminosScroll);
+    }
+
+    function cerrarModalTerminos() {
+      modalTerminos.classList.add('hidden');
+      modalTerminos.classList.remove('flex');
+    }
+
+    function checkTerminosScroll() {
+      const { scrollTop, scrollHeight, clientHeight } = terminosScrollBody;
+      const llegoAlFinal = scrollTop + clientHeight >= scrollHeight - 16;
+      if (llegoAlFinal) {
+        btnAceptarTerminos.disabled = false;
+        terminosScrollHint.classList.add('hidden');
+      }
+    }
+
+    linkTerminos.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // que tocar el enlace no marque la casilla por detrás
+      abrirModalTerminos();
+    });
+    btnCerrarTerminos.addEventListener('click', cerrarModalTerminos);
+    terminosScrollBody.addEventListener('scroll', checkTerminosScroll);
+
+    btnAceptarTerminos.addEventListener('click', () => {
+      chkTerminos.checked = true;
+      refreshContinueState();
+      cerrarModalTerminos();
+    });
+
+    // --- Comprobante: boleta o factura -----------------------------------
+    let comprobante = (booking.comprobante && booking.comprobante.tipo) || 'boleta';
+    const datosFactura = document.getElementById('datos-factura');
+    const inputRuc = document.getElementById('factura-ruc');
+    const inputRazon = document.getElementById('factura-razon');
+    const inputDireccion = document.getElementById('factura-direccion');
+    const estadoRuc = document.getElementById('factura-estado');
+    const btnBuscarRuc = document.getElementById('btn-buscar-ruc');
+    if (booking.comprobante) {
+      inputRuc.value = booking.comprobante.ruc || '';
+      inputRazon.value = booking.comprobante.razon_social || '';
+      inputDireccion.value = booking.comprobante.direccion || '';
+    }
+
+    function pintarComprobante() {
+      document.querySelectorAll('[data-comprobante]').forEach(b => {
+        const activo = b.dataset.comprobante === comprobante;
+        b.setAttribute('aria-checked', String(activo));
+        b.className = `py-3 rounded-vibe text-sm font-bold border transition-colors ${activo
+          ? 'border-brand bg-brand/10 text-white' : 'border-white/10 bg-surface-container text-gray-400'}`;
+      });
+      datosFactura.classList.toggle('hidden', comprobante !== 'factura');
+    }
+    document.querySelectorAll('[data-comprobante]').forEach(b => b.addEventListener('click', () => {
+      comprobante = b.dataset.comprobante;
+      pintarComprobante();
+      if (comprobante === 'factura') inputRuc.focus();
+    }));
+    pintarComprobante();
+
+    function avisoRuc(texto, bien) {
+      estadoRuc.textContent = texto;
+      estadoRuc.className = `text-xs mt-1 ${bien ? 'text-brand' : 'text-amber-300'}`;
+    }
+
+    // Como boletería al dar Enter en el RUC: trae razón social y dirección. Si
+    // JELAF no lo conoce, el cliente las escribe (igual que se corrige un nombre).
+    async function buscarRuc() {
+      const ruc = inputRuc.value.replace(/\D/g, '');
+      inputRuc.value = ruc;
+      if (ruc.length !== 11) return avisoRuc('El RUC tiene 11 dígitos.', false);
+      btnBuscarRuc.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v2/venta/consultar-ruc`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: booking.bookingId, ruc })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) return avisoRuc(typeof body.detail === 'string' ? body.detail : 'Revisa el RUC.', false);
+        if (body.encontrado) {
+          inputRazon.value = body.razon_social || '';
+          inputDireccion.value = body.direccion || '';
+          avisoRuc('RUC encontrado. Puedes corregir los datos si hace falta.', true);
+        } else {
+          avisoRuc('No encontramos ese RUC. Escribe la razón social tal como figura en SUNAT.', false);
+          inputRazon.focus();
+        }
+      } catch (e) {
+        avisoRuc('No pudimos consultar el RUC. Escribe la razón social.', false);
+      } finally {
+        btnBuscarRuc.disabled = false;
+      }
+    }
+    btnBuscarRuc.addEventListener('click', buscarRuc);
+    inputRuc.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); buscarRuc(); } });
+    inputRuc.addEventListener('input', () => {
+      inputRuc.value = inputRuc.value.replace(/\D/g, '').slice(0, 11);
+      if (inputRuc.value.length === 11) buscarRuc();
+    });
+
+    // Correo obligatorio: los boletos solo llegan por correo (WhatsApp no deja
+    // descargar). El servidor lo valida de nuevo y no cobra sin correo.
+    const inputEmail = document.getElementById('contact-email');
+    const errorEmail = document.getElementById('error-email');
+    const CORREO_VALIDO = /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,24}$/;
+    inputEmail.addEventListener('input', () => errorEmail.classList.add('hidden'));
+
+    // Un correo mal escrito con dominio válido "sale bien" y rebota después:
+    // se ataja antes de pagar sugiriendo el dominio correcto de los más usados.
+    const DOMINIOS_TIPEO = {
+      'gmial.com': 'gmail.com', 'gmal.com': 'gmail.com', 'gmai.com': 'gmail.com', 'gamil.com': 'gmail.com',
+      'gnail.com': 'gmail.com', 'gmail.co': 'gmail.com', 'gmail.cm': 'gmail.com', 'gmail.con': 'gmail.com',
+      'gmail.es': 'gmail.com', 'gmaill.com': 'gmail.com', 'hotmial.com': 'hotmail.com', 'hotmal.com': 'hotmail.com',
+      'hotmai.com': 'hotmail.com', 'hotmail.con': 'hotmail.com', 'hotmail.co': 'hotmail.com', 'hotmil.com': 'hotmail.com',
+      'outlok.com': 'outlook.com', 'outlook.con': 'outlook.com', 'yaho.com': 'yahoo.com', 'yahoo.con': 'yahoo.com',
+      'icloud.con': 'icloud.com', 'iclod.com': 'icloud.com'
+    };
+    const sugerenciaEmail = document.getElementById('sugerencia-email');
+    function revisarDominio() {
+      const [usuario, dominio] = inputEmail.value.trim().toLowerCase().split('@');
+      let bueno = dominio && DOMINIOS_TIPEO[dominio];
+      if (!bueno && dominio && dominio.endsWith('.con')) bueno = dominio.slice(0, -4) + '.com';
+      sugerenciaEmail.classList.toggle('hidden', !bueno);
+      if (!bueno) return;
+      sugerenciaEmail.textContent = '';
+      const boton = Object.assign(document.createElement('button'), {
+        type: 'button', className: 'underline font-semibold', textContent: `${usuario}@${bueno}` });
+      boton.addEventListener('click', () => { inputEmail.value = `${usuario}@${bueno}`; sugerenciaEmail.classList.add('hidden'); });
+      sugerenciaEmail.append('¿Quisiste decir ', boton, '?');
+    }
+    inputEmail.addEventListener('blur', revisarDominio);
+    inputEmail.addEventListener('input', () => sugerenciaEmail.classList.add('hidden'));
+
+    async function guardarCorreo() {
+      const correo = inputEmail.value.trim().toLowerCase();
+      inputEmail.value = correo;
+      if (!CORREO_VALIDO.test(correo)) {
+        errorEmail.textContent = correo ? 'Revisa tu correo: parece que le falta algo.' : 'Escribe tu correo para recibir tus boletos.';
+        errorEmail.classList.remove('hidden');
+        inputEmail.focus();
+        throw new Error('Falta un correo válido para enviarte tus boletos.');
+      }
+      const res = await fetch(`${API_BASE_URL}/api/v2/venta/contacto`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: booking.bookingId, correo })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof body.detail === 'string' ? body.detail : 'Revisa tu correo.');
+    }
+
+    // El servidor guarda el comprobante de esta compra (no se confía en el navegador al emitir).
+    async function guardarComprobante() {
+      const cuerpo = { booking_id: booking.bookingId, tipo: comprobante };
+      if (comprobante === 'factura') {
+        Object.assign(cuerpo, { ruc: inputRuc.value.trim(), razon_social: inputRazon.value.trim().toUpperCase(),
+                                direccion: inputDireccion.value.trim().toUpperCase() });
+        if (cuerpo.ruc.length !== 11) throw new Error('Para la factura escribe el RUC (11 dígitos).');
+        if (!cuerpo.razon_social) throw new Error('Para la factura escribe la razón social.');
+      }
+      const res = await fetch(`${API_BASE_URL}/api/v2/venta/comprobante`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo)
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof body.detail === 'string' ? body.detail : 'Revisa los datos de la factura.');
+      saveBooking({ comprobante: Object.assign({}, cuerpo, { booking_id: undefined }) });
+    }
+
+    const modalMenorEdad = document.getElementById('modal-menor-edad');
+    const btnConfirmarMenor = document.getElementById('btn-confirmar-menor');
+    const btnVolverMenor = document.getElementById('btn-volver-menor');
+
+    // ¿Algún pasajero tendrá menos de 18 años el día del viaje? Antes el aviso
+    // salía a todos, aunque viajaran solo adultos.
+    function hayMenorDeEdad() {
+      const viaje = (booking.busqueda && booking.busqueda.fecha) || window.TMT.hoyLima();
+      return (booking.pasajeros || []).some(p => {
+        if (!p.nacimiento) return false;
+        const [a, m, d] = p.nacimiento.split('-').map(Number);
+        const [va, vm, vd] = viaje.split('-').map(Number);
+        const edad = va - a - ((vm < m || (vm === m && vd < d)) ? 1 : 0);
+        return edad < 18;
+      });
+    }
+
+    btnContinuar.addEventListener('click', () => {
+      if (!hayMenorDeEdad()) {
+        procederAlPago();
+        return;
+      }
+      modalMenorEdad.classList.remove('hidden');
+      modalMenorEdad.classList.add('flex');
+    });
+
+    btnVolverMenor.addEventListener('click', () => {
+      modalMenorEdad.classList.add('hidden');
+      modalMenorEdad.classList.remove('flex');
+    });
+
+    btnConfirmarMenor.addEventListener('click', () => {
+      modalMenorEdad.classList.add('hidden');
+      modalMenorEdad.classList.remove('flex');
+      procederAlPago();
+    });
+
+    async function procederAlPago() {
+      const liberarBoton = window.TMT.ocupar(btnContinuar, 'Preparando tu pago…');
+      checkoutError.classList.add('hidden');
+
+      try {
+        await guardarCorreo();
+        await guardarComprobante();
+        // El total lo calcula el SERVIDOR con los precios de JELAF de los
+        // asientos que tiene esta compra; el navegador solo lo muestra.
+        const res = await fetch(`${API_BASE_URL}/api/v2/venta/monto`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: booking.bookingId })
+        });
+
+        const body = await res.json();
+        if (!res.ok) throw new Error(typeof body.detail === 'string' ? body.detail : 'No se pudo verificar tu compra.');
+        if (!body.pasajeros_completos) throw new Error('Faltan datos de algún pasajero. Vuelve al paso anterior.');
+
+        saveBooking({
+          contacto: Object.assign({}, booking.contacto, { email: document.getElementById('contact-email').value.trim() }),
+          montoTotal: body.monto_total
+        });
+        
+        // Redirección a la pasarela
+        window.location.href = 'pago.html';
+        
+      } catch (err) {
+        checkoutError.textContent = `${err.message}`;
+        checkoutError.classList.remove('hidden');
+        liberarBoton();
+      }
+    }
+</script>
+</body></html>

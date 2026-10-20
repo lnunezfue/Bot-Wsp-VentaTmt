@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .seat-selected {
+            border: 1.5px solid #4ff07f;
+            background-color: rgba(79, 240, 127, 0.1);
+        }
+        .seat-occupied {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b141b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d363e;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#dae3ee",
+                        "on-primary-fixed-variant": "#005322",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#001e2c",
+                        "tertiary-fixed": "#c4e7ff",
+                        "on-surface-variant": "#bbcbb9",
+                        "outline-variant": "#3c4a3d",
+                        "primary": "#4ff07f",
+                        "inverse-on-surface": "#293139",
+                        "tertiary": "#a1dbff",
+                        "inverse-primary": "#006d2f",
+                        "inverse-surface": "#dae3ee",
+                        "secondary-fixed": "#8ff4e3",
+                        "primary-container": "#25d366",
+                        "error-container": "#93000a",
+                        "tertiary-container": "#48c4ff",
+                        "secondary": "#72d8c8",
+                        "on-surface": "#dae3ee",
+                        "on-primary-container": "#005523",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#060f16",
+                        "primary-fixed-dim": "#3de273",
+                        "surface-container-low": "#141d24",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "on-secondary": "#003731",
+                        "surface-variant": "#2d363e",
+                        "on-tertiary": "#00344a",
+                        "on-secondary-fixed-variant": "#005047",
+                        "on-secondary-container": "#00302a",
+                        "surface-tint": "#3de273",
+                        "on-error": "#690005",
+                        "primary-fixed": "#66ff8e",
+                        "on-secondary-fixed": "#00201c",
+                        "tertiary-fixed-dim": "#7cd0ff",
+                        "surface-dim": "#0b141b",
+                        "secondary-fixed-dim": "#72d8c8",
+                        "on-primary": "#003915",
+                        "on-tertiary-container": "#004f6c",
+                        "secondary-container": "#34a192",
+                        "surface-container": "#182128",
+                        "surface": "#0b141b",
+                        "outline": "#869584",
+                        "background": "#0b141b",
+                        "surface-container-highest": "#2d363e",
+                        "surface-container-high": "#222b33",
+                        "surface-bright": "#313a42",
+                        "on-primary-fixed": "#002109"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "seat-gap": "8px",
+                        "gutter": "12px",
+                        "unit": "4px",
+                        "container-padding": "20px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "seat-number": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "seat-number": ["18px", {"lineHeight": "18px", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-lg min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background dark:bg-background flex items-center justify-between px-margin-mobile h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-variant transition-colors duration-200">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-primary">Elige tu asiento</h1>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-variant transition-colors duration-200">
+<span class="material-symbols-outlined text-primary">help</span>
+</button>
+</header>
+<main class="flex-1 pt-16 pb-32 overflow-y-auto px-margin-mobile">
+<!-- Trip Information Summary -->
+<div class="mt-gutter p-gutter bg-surface-container-low rounded-xl mb-gutter">
+<div class="flex justify-between items-center mb-unit">
+<span class="font-label-md text-label-md text-on-surface-variant">LIMA → CUSCO</span>
+<span class="font-label-md text-label-md text-primary">S/ 85.00</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">Expreso Libertador - 22:30 PM</p>
+</div>
+<!-- Floor Toggle (Segmented Control) -->
+<div class="flex bg-surface-container rounded-xl p-1 mb-8 gap-1">
+<button class="flex-1 py-3 px-4 rounded-lg bg-primary-container text-on-primary-container font-headline-md text-headline-md transition-all duration-300" id="floor1-btn" onclick="switchFloor(1)">
+                1er Piso
+            </button>
+<button class="flex-1 py-3 px-4 rounded-lg text-on-surface-variant font-headline-md text-headline-md transition-all duration-300" id="floor2-btn" onclick="switchFloor(2)">
+                2do Piso
+            </button>
+</div>
+<!-- Seat Map Container -->
+<div class="relative bg-surface-container-low rounded-[2rem] p-8 border border-outline-variant/20 shadow-2xl mx-auto max-w-sm">
+<!-- Bus Front / Driver Area -->
+<div class="flex justify-between items-center mb-10 opacity-40">
+<div class="w-12 h-1 bg-surface-container-highest rounded-full"></div>
+<span class="material-symbols-outlined text-4xl">directions_bus</span>
+<div class="w-12 h-1 bg-surface-container-highest rounded-full"></div>
+</div>
+<!-- Seat Grid -->
+<div class="grid grid-cols-4 gap-y-6 gap-x-seat-gap" id="seat-map">
+<!-- Javascript will populate seats here -->
+</div>
+<!-- Rear Area -->
+<div class="mt-12 flex justify-center opacity-20">
+<div class="w-full h-2 bg-surface-container-highest rounded-full"></div>
+</div>
+</div>
+<!-- Legend Section -->
+<div class="mt-10 grid grid-cols-3 gap-gutter px-4">
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-12 bg-surface-container-highest rounded-lg border border-outline-variant/30"></div>
+<span class="font-label-md text-label-md text-on-surface-variant">Libre</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-12 seat-selected rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Elegido</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-12 bg-surface-container rounded-lg opacity-30 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">close</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Ocupado</span>
+</div>
+</div>
+</main>
+<!-- Bottom Action Bar (Confirm) -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-container-high p-margin-mobile flex flex-col gap-4 z-50 rounded-t-3xl shadow-[0_-8px_24px_rgba(0,0,0,0.5)]">
+<div class="flex justify-between items-end">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Asientos seleccionados</p>
+<p class="font-headline-md text-headline-md text-on-surface" id="selected-seats-display">Ninguno</p>
+</div>
+<div class="text-right">
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Total</p>
+<p class="font-headline-lg text-headline-lg text-primary" id="total-price">S/ 0.00</p>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary-container font-headline-md text-headline-md py-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-primary-container/20">
+            Confirmar Asiento
+        </button>
+</div>
+<!-- Hidden Floor Background Images Pre-loading/Reference -->
+<div class="hidden">
+<img alt="Reference for bus layout interior" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYaIXQNeMVRZlbMBFJh9WktFDPuERLc52uvrSfoznEvthALpZOYaSCyy0wPVQhTKumooyqiEuqJtQIQ6PZ-Hj8TB6jIZ61VhzP9fLH1qKb1Qvgz7CsZoAP6vUlCeFxciKzIhD5rQROuvw1CFpzaHip7KqJ0sjHmpxHzQCEIMwVY-wR_WHfUR4aa54UTeZmcve25vyDQbjzUxyls8b2GL4LbxP5xi04xY8p9a5HVD_CUZW3GIFuT2DMbP1Cehk6w2Orhg"/>
+<img alt="Reference for seat detail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCe04UAMI53rKiPin2AOx8BDeJHg-P15f3vsZaxd97ZZoClcpFB2X4suIh8JQOkB4xODUUtzX0J9X96M_ST7s7Dequtg93mjFzjOP81d3POOMfkMr0z4UI4I0QsVuxdRcrAZvX0u1m8PETfjioEM5zCiifJiC-Omdpel6M93XS_MDyu8Z-kZss3ZbAowGgM1TvDpUDBpS7mYYzHU1Xf-EL_c5M7ipnWMB9I7aedg7WhI84bf72ukulkwga4FYniG-b30g"/>
+<img alt="Reference for floor selection" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAL63Q7a5bgml7Oyo-wPEcajm6k9q4YWRPJNq93wah8YutT_DzVQQLn_yGNU_Gueoph3oMYrJbd2lJ6tiPyOToJlMQBb7cE5UPQGBebqBA9ywCtNv3mLe3I9l5HiukjJNp_IAyfian7Z9diMyJUParKGOV6eP10nBru-lRfNR7crSk-KBfrUgMeOkl8M-0LNxopTnCZyVH5XtDoO-s9Xko2QyYB8jIxV6BIhP6jlJsNhCsZtrZm8COE8weJ4lVqly8KZw"/>
+</div>
+<script>
+        const seatMap = document.getElementById('seat-map');
+        const selectedSeatsDisplay = document.getElementById('selected-seats-display');
+        const totalPriceDisplay = document.getElementById('total-price');
+        let selectedSeats = [];
+        let currentFloor = 1;
+        const pricePerSeat = 85;
+
+        // Mock data for occupied seats
+        const occupiedSeats = {
+            1: [1, 2, 5, 8, 12, 14],
+            2: [3, 4, 10, 11, 15, 16, 20]
+        };
+
+        function renderSeats() {
+            seatMap.innerHTML = '';
+            const totalRows = currentFloor === 1 ? 4 : 6;
+            
+            for (let i = 1; i <= totalRows * 4; i++) {
+                // Handle aisle logic (4 column bus: 2 seats, gap, 2 seats)
+                const isAisle = (i % 4 === 3 || i % 4 === 0) && (i % 4 !== 0); // Not quite right for 4 cols, let's simplify
+                
+                // Actual grid logic: columns 1,2 - gap - columns 3,4
+                // We use grid-cols-4 and handle margin on column 2
+                
+                const seatBtn = document.createElement('button');
+                const isOccupied = occupiedSeats[currentFloor].includes(i);
+                const isSelected = selectedSeats.includes(`F${currentFloor}-S${i}`);
+                
+                seatBtn.className = `relative h-14 w-full rounded-lg flex items-center justify-center transition-all duration-200 border border-outline-variant/10 
+                    ${isOccupied ? 'seat-occupied' : 'bg-surface-container hover:bg-surface-variant'} 
+                    ${isSelected ? 'seat-selected' : ''}
+                    ${(i % 4 === 2) ? 'mr-seat-gap' : ''}
+                    ${(i % 4 === 3) ? 'ml-seat-gap' : ''}
+                `;
+                
+                seatBtn.innerHTML = `
+                    <span class="font-seat-number text-seat-number ${isSelected ? 'text-primary' : 'text-on-surface-variant/50'}">${i}</span>
+                    ${isSelected ? '<span class="absolute -top-1 -right-1 material-symbols-outlined text-primary text-[16px]" style="font-variation-settings: \'FILL\' 1;">check_circle</span>' : ''}
+                `;
+
+                if (!isOccupied) {
+                    seatBtn.onclick = () => toggleSeat(i);
+                } else {
+                    seatBtn.innerHTML += '<span class="absolute inset-0 flex items-center justify-center opacity-10"><span class="material-symbols-outlined text-xs">close</span></span>';
+                }
+
+                seatMap.appendChild(seatBtn);
+            }
+        }
+
+        function toggleSeat(id) {
+            const seatKey = `F${currentFloor}-S${id}`;
+            const index = selectedSeats.indexOf(seatKey);
+            
+            if (index > -1) {
+                selectedSeats.splice(index, 1);
+            } else {
+                selectedSeats.push(seatKey);
+            }
+            
+            updateUI();
+            renderSeats();
+        }
+
+        function updateUI() {
+            if (selectedSeats.length === 0) {
+                selectedSeatsDisplay.innerText = 'Ninguno';
+                totalPriceDisplay.innerText = 'S/ 0.00';
+            } else {
+                // Show seat numbers only without floor prefix for cleaner UI
+                const displayNames = selectedSeats.map(s => s.split('-S')[1]);
+                selectedSeatsDisplay.innerText = displayNames.join(', ');
+                totalPriceDisplay.innerText = `S/ ${(selectedSeats.length * pricePerSeat).toFixed(2)}`;
+            }
+        }
+
+        function switchFloor(floor) {
+            currentFloor = floor;
+            const btn1 = document.getElementById('floor1-btn');
+            const btn2 = document.getElementById('floor2-btn');
+            
+            if (floor === 1) {
+                btn1.className = 'flex-1 py-3 px-4 rounded-lg bg-primary-container text-on-primary-container font-headline-md text-headline-md transition-all duration-300';
+                btn2.className = 'flex-1 py-3 px-4 rounded-lg text-on-surface-variant font-headline-md text-headline-md transition-all duration-300';
+            } else {
+                btn2.className = 'flex-1 py-3 px-4 rounded-lg bg-primary-container text-on-primary-container font-headline-md text-headline-md transition-all duration-300';
+                btn1.className = 'flex-1 py-3 px-4 rounded-lg text-on-surface-variant font-headline-md text-headline-md transition-all duration-300';
+            }
+            
+            renderSeats();
+        }
+
+        // Initialize
+        renderSeats();
+    </script>
+</body></html>

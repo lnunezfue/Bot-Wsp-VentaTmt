@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html class="h-full" lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+  <title>Pago Confirmado - Vibe Transit</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            vibe: {
+              bg: '#0b141b',
+              surface: '#121b22',
+              card: '#1f2c34',
+              green: '#25d366',
+              textPrimary: '#e9edef',
+              textSecondary: '#8696a0',
+              border: '#2a3942'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style data-purpose="background-pattern">
+    body {
+      margin: 0;
+    }
+    .app-shell {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+    }
+    .bg-pattern {
+      background-color: #0b141b;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10l5 5m10-5l-5 5M50 20v10m-5-5h10M80 15l-10 10m20 20h-10m-20 40l10-10m10 10l-5-5' stroke='%231f2c34' stroke-width='1' fill='none' fill-rule='evenodd' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+    }
+  </style>
+<script src="config.js?v=2026-10-18b"></script>
+</head>
+<body class="bg-vibe-bg text-vibe-textPrimary h-full flex flex-col font-sans selection:bg-vibe-green/30">
+<div class="app-shell">
+
+  <!-- BEGIN: Main Content Container -->
+  <main class="flex-grow flex flex-col items-center px-4 sm:px-6 pt-8 pb-36 bg-pattern">
+    <!-- BEGIN: Page Title -->
+    <div class="text-center mb-8" data-purpose="title-section">
+      <h1 class="text-2xl font-bold mb-1 text-vibe-green">¡Pago confirmado!</h1>
+      <p class="text-vibe-textSecondary text-sm tracking-wider uppercase" id="route-total">Cargando...</p>
+    </div>
+    <!-- END: Page Title -->
+
+    <!-- BEGIN: Transaction Details Card -->
+    <div class="w-full max-w-sm shrink-0 bg-vibe-card/90 backdrop-blur-sm rounded-2xl border border-vibe-border overflow-hidden shadow-2xl" data-purpose="payment-card">
+      <div class="p-5 flex items-start gap-4 border-b border-vibe-border bg-vibe-surface/30">
+        <div class="flex-shrink-0 w-10 h-10 bg-vibe-green/10 rounded-full border border-vibe-green/30 flex items-center justify-center">
+          <svg class="w-6 h-6 text-vibe-green" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+            <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold leading-tight">Transacción exitosa</h2>
+          <p class="text-vibe-textSecondary text-sm mt-1">Tus boletos ya están emitidos.</p>
+        </div>
+      </div>
+
+      <div class="p-5 space-y-4" data-purpose="details-list" id="details-list">
+        <!-- filas dinámicas -->
+      </div>
+
+      <div class="pb-6 pt-2 flex justify-center items-center gap-2">
+        <svg class="w-3.5 h-3.5 text-vibe-textSecondary" fill="currentColor" viewbox="0 0 20 20">
+          <path clip-rule="evenodd" d="M10 1.944A11.94 11.94 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.942 11.942 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" fill-rule="evenodd"></path>
+        </svg>
+        <span class="text-xs text-vibe-textSecondary font-medium">Comprobante validado por JELAF</span>
+      </div>
+    </div>
+    <!-- END: Transaction Details Card -->
+  </main>
+  <!-- END: Main Content Container -->
+
+</div>
+
+<!-- Siempre a la vista: los boletos son largos y el botón quedaba al final de todo. -->
+<footer class="fixed bottom-0 inset-x-0 z-40 mx-auto max-w-[500px] bg-vibe-surface border-t border-vibe-border px-4 pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));">
+  <button class="w-full flex items-center justify-center gap-2 bg-vibe-green hover:bg-emerald-500 text-vibe-bg font-bold py-3.5 rounded-xl transition-all duration-200 shadow-lg active:scale-[0.98]" id="btn-nueva-compra" type="button">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg>
+    Realizar otra compra
+  </button>
+</footer>
+
+<!-- Aviso: los boletos van al correo (WhatsApp no deja descargar, 2026-10-14). -->
+<div class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm px-6" id="modal-correo" role="dialog" aria-modal="true" aria-labelledby="modal-correo-titulo">
+  <div class="w-full max-w-sm bg-vibe-card border border-vibe-border rounded-2xl p-6 text-center shadow-2xl">
+    <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-vibe-green/10 border border-vibe-green/30 flex items-center justify-center">
+      <svg class="w-6 h-6 text-vibe-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    </div>
+    <h2 class="text-lg font-bold mb-2" id="modal-correo-titulo">Tus boletos van a tu correo</h2>
+    <p class="text-sm text-vibe-textSecondary mb-1">Los enviamos en PDF a:</p>
+    <p class="text-sm font-bold text-vibe-textPrimary break-all mb-3" id="modal-correo-destino"></p>
+    <div class="text-xs mb-5 min-h-[2.5rem]" id="modal-correo-estado"></div>
+    <button class="w-full bg-vibe-green text-vibe-bg font-bold py-3 rounded-xl active:scale-[0.98] transition-transform" id="btn-modal-correo" type="button">Entendido</button>
+    <button class="hidden w-full mt-2 text-vibe-green font-bold py-2 text-sm" id="btn-modal-corregir" type="button">Corregir mi correo</button>
+  </div>
+</div>
+
+<script>
+    const API_BASE_URL = window.TMT.API_BASE_URL;
+    const STORAGE_KEY = 'vibeTransitBooking';
+    function loadBooking() {
+      try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+
+    const booking = loadBooking();
+    const busqueda = booking.busqueda || {};
+    const viaje = booking.viajeSeleccionado || {};
+    const pago = booking.pago || {};
+    const total = pago.montoTotal || booking.montoTotal || 0;
+    const boletos = booking.boletos || [];
+    if (boletos.length) window.TMT.pagoEnCurso.borrar(booking.bookingId);   // N60-SN: compra cerrada
+    const hoy = new Date().toLocaleDateString('es-PE');
+
+    const fechaViajeVisual = busqueda.fecha && busqueda.fecha.includes('-')
+      ? busqueda.fecha.split('-').reverse().join('/')
+      : busqueda.fecha || '—';
+
+    document.getElementById('route-total').textContent =
+      `${busqueda.origen || '—'} a ${busqueda.destino || '—'} - S/ ${total.toFixed(2)}`;
+
+    // El navegador de WhatsApp no deja descargar archivos (prueba real del
+    // 2026-10-14, pruebas_whatsapp/prueba-pdf): "descargar" muestra "Estás
+    // saliendo de WhatsApp" y no hace nada. Decisión de la empresa: aquí solo
+    // se MUESTRA el boleto (dibujado como imagen en la página, lo único que
+    // funcionó siempre) y el PDF llega por correo. El servidor arma el PDF con
+    // la venta guardada; el navegador solo dice cuál (su compra y el asiento).
+    const correoDestino = (booking.contacto && booking.contacto.email) || '';
+
+    // Reclamos y reportes por problemas con el envío o el boleto (pedido de la
+    // empresa, 2026-10-15). El asunto lleva el número de pedido para ubicar la compra.
+    const SOPORTE = 'soporte@transportesmoquegua.com';
+    function enlaceSoporte() {
+      const asunto = encodeURIComponent(`Mis boletos - pedido ${pago.referenciaOperacion || ''}`.trim());
+      return `<a class="underline font-bold text-vibe-green break-all" href="mailto:${SOPORTE}?subject=${window.TMT.esc(asunto)}">${SOPORTE}</a>`;
+    }
+    function avisoSoporte(texto) {
+      return `<p class="text-xs text-vibe-textSecondary mt-2">${texto || '¿Sigue sin llegar? Escríbenos a'} ${enlaceSoporte()} con tu Nro. de pedido y te ayudamos.</p>`;
+    }
+
+    async function urlDelPdf(indice) {
+        const boleto = boletos[indice];
+        const payload = { booking_id: String(booking.bookingId || ''), asiento: String(boleto.asiento || '') };
+        const res = await fetch(`${API_BASE_URL}/api/v2/boleto/enlace`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.url) throw new Error(data.detail || 'Inténtalo de nuevo en un momento.');
+        return `${API_BASE_URL}${data.url}`;
+    }
+
+    // pdf.js dibuja el PDF como imagen dentro de la página.
+    const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+    let pdfjsListo = null;
+    function cargarPdfJs() {
+        if (!pdfjsListo) pdfjsListo = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = PDFJS + 'pdf.min.js';
+            s.integrity = 'sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e';
+            s.crossOrigin = 'anonymous';
+            s.referrerPolicy = 'no-referrer';
+            s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; resolve(window.pdfjsLib); };
+            s.onerror = () => { pdfjsListo = null; reject(new Error('No cargó el visor. Revisa tu conexión.')); };
+            document.head.appendChild(s);
+        });
+        return pdfjsListo;
+    }
+
+    const CARGANDO = `
+      <div class="flex items-center gap-3 py-6 justify-center text-vibe-textSecondary text-xs" role="status">
+        <span class="w-5 h-5 border-2 border-vibe-green/30 border-t-vibe-green rounded-full animate-spin"></span>
+        Cargando tu boleto…
+      </div>`;
+
+    async function mostrarBoleto(indice) {
+        const vista = document.getElementById(`vista-boleto-${indice}`);
+        vista.innerHTML = CARGANDO;
+        try {
+            const [pdfjs, url] = await Promise.all([cargarPdfJs(), urlDelPdf(indice)]);
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) throw new Error('Inténtalo de nuevo en un momento.');
+            const doc = await pdfjs.getDocument({ data: await res.arrayBuffer() }).promise;
+            const pagina = await doc.getPage(1);
+            const vp = pagina.getViewport({ scale: 2 });
+            const canvas = Object.assign(document.createElement('canvas'), { width: vp.width, height: vp.height });
+            await pagina.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+            const img = document.createElement('img');
+            img.alt = `Boleto del asiento ${boletos[indice].asiento}`;
+            img.className = 'w-full rounded-lg bg-white';
+            img.src = canvas.toDataURL('image/png');
+            vista.innerHTML = '';
+            vista.appendChild(img);
+        } catch (e) {
+            vista.innerHTML = '';
+            const p = Object.assign(document.createElement('p'), { className: 'text-xs text-red-400 py-2' });
+            p.textContent = `No se pudo mostrar el boleto: ${e.message}`;
+            const reintentar = Object.assign(document.createElement('button'), {
+                className: 'text-xs border border-vibe-green text-vibe-green px-3 py-1.5 rounded font-bold', textContent: 'Reintentar' });
+            reintentar.addEventListener('click', () => mostrarBoleto(indice));
+            const ayuda = document.createElement('div');
+            ayuda.innerHTML = avisoSoporte('Si el problema sigue, escríbenos a');
+            vista.append(p, reintentar, ayuda);
+        }
+    }
+
+    const filasBoletos = boletos.map((b, idx) => `
+      <div class="flex justify-between items-center py-1">
+        <span class="text-vibe-textSecondary text-sm">Asiento ${window.TMT.esc(b.asiento)}</span>
+        <span class="font-bold text-sm text-vibe-green tracking-wide">${window.TMT.esc(b.nro_boleto || 'Por confirmar')}</span>
+      </div>
+      <div class="pb-2 -mt-1">
+        <span class="text-vibe-textSecondary text-xs">${window.TMT.esc(b.pasajero)}${
+          b.link_comprobante && /^https:\/\//.test(b.link_comprobante)
+            ? ` · <a class="underline text-vibe-green" target="_blank" rel="noopener" href="${window.TMT.esc(b.link_comprobante)}">comprobante electrónico</a>`
+            : ''}</span>
+      </div>
+      <div id="vista-boleto-${idx}" class="mb-3"></div>
+      <div class="border-t border-vibe-border mb-2"></div>
+    `).join('');
+
+    document.getElementById('details-list').innerHTML = `
+      <div class="flex justify-between items-center py-1">
+        <span class="text-vibe-textSecondary text-sm">Ruta</span>
+        <span class="font-semibold text-sm uppercase">${window.TMT.esc(busqueda.origen || '—')} - ${window.TMT.esc(busqueda.destino || '—')}</span>
+      </div>
+      <div class="border-t border-vibe-border"></div>
+
+      <div class="flex justify-between items-center py-1">
+        <span class="text-vibe-textSecondary text-sm">Fecha de Viaje</span>
+        <span class="font-semibold text-sm">${window.TMT.esc(fechaViajeVisual)} a las ${window.TMT.esc(viaje.hora_viaje || viaje.hora_partida || '—')}</span>
+      </div>
+      <div class="border-t border-vibe-border"></div>
+
+      <div class="flex justify-between items-center py-1">
+        <span class="text-vibe-textSecondary text-sm">Monto Pagado</span>
+        <span class="font-semibold text-sm">S/ ${total.toFixed(2)}</span>
+      </div>
+      <div class="border-t border-vibe-border"></div>
+
+      <div class="flex justify-between items-center gap-3 py-1 mb-2">
+        <span class="text-vibe-textSecondary text-sm shrink-0">Nro. de Pedido</span>
+        <span class="font-mono text-xs text-vibe-textSecondary break-all text-right">${window.TMT.esc(pago.referenciaOperacion || '—')}</span>
+      </div>
+
+      <div class="bg-vibe-surface/50 rounded-xl p-3 border border-vibe-border">
+        <h3 class="text-sm font-bold text-vibe-green mb-1">Tus boletos</h3>
+        <div class="mb-3" id="estado-correo" aria-live="polite"></div>
+        ${filasBoletos || '<p class="text-xs text-red-300 py-1">No se recibieron tus boletos del servidor. Escríbenos a ${enlaceSoporte()} con tu Nro. de pedido.</p>'}
+      </div>
+    `;
+
+    // Los boletos se muestran solos, uno tras otro (sin cargar todos a la vez).
+    (async () => { for (let i = 0; i < boletos.length; i++) await mostrarBoleto(i); })();
+
+    // --- Correo: estado real del envío, corregir y reenviar ---------------
+    // El servidor manda el correo en segundo plano: aquí se consulta si salió.
+    // Si el servidor de correo rechazó la dirección (o falló), el cliente la
+    // corrige y lo reenvía. Una dirección mal escrita con dominio válido se
+    // acepta y rebota después: por eso "¿No te llegó?" siempre está a mano.
+    const esc = window.TMT.esc;
+    const cajaCorreo = document.getElementById('estado-correo');
+    const modal = document.getElementById('modal-correo');
+    const modalEstado = document.getElementById('modal-correo-estado');
+    const btnModalCorregir = document.getElementById('btn-modal-corregir');
+    let estadoCorreo = { estado: correoDestino ? 'pendiente' : 'sin_correo', correo: correoDestino, reenvios_restantes: 3 };
+    let formularioAbierto = false;
+    let consultas = 0;
+
+    function formularioCorreo(mensaje) {
+      if (estadoCorreo.reenvios_restantes <= 0) {
+        return `<p class="text-xs text-vibe-textSecondary mt-2">Ya no se puede reenviar desde aquí. Escríbenos a ${enlaceSoporte()} con tu Nro. de pedido y te los enviamos; mientras tanto, guarda tus boletos con una captura de pantalla.</p>`;
+      }
+      return `
+        <form class="mt-2 space-y-2" id="form-correo" novalidate>
+          ${mensaje ? `<p class="text-xs text-vibe-textSecondary">${esc(mensaje)}</p>` : ''}
+          <input class="w-full bg-vibe-bg border border-vibe-border rounded-lg text-sm px-3 py-2.5 lowercase focus:outline-none focus:border-vibe-green"
+                 id="input-correo" type="email" inputmode="email" autocomplete="email" value="${esc(estadoCorreo.correo || '')}" placeholder="tucorreo@ejemplo.com">
+          <p class="text-xs text-red-400 hidden" id="error-correo"></p>
+          <button class="w-full bg-vibe-green text-vibe-bg font-bold text-sm py-2.5 rounded-lg disabled:opacity-60" id="btn-reenviar" type="submit">Enviar mis boletos</button>
+          <p class="text-[11px] text-vibe-textSecondary text-center">Te quedan ${estadoCorreo.reenvios_restantes} reenvío(s).</p>
+        </form>`;
+    }
+
+    function pintarEstadoCorreo() {
+      const destino = `<b class="text-vibe-textPrimary break-all">${esc(estadoCorreo.correo || 'tu correo')}</b>`;
+      const girando = '<span class="inline-block w-3.5 h-3.5 shrink-0 rounded-full border-2 border-vibe-green/30 border-t-vibe-green animate-spin align-[-2px] mr-1.5"></span>';
+      let html = '';
+      if (estadoCorreo.estado === 'pendiente') {
+        html = consultas > 20
+          ? `<p class="text-xs text-vibe-textSecondary">${girando}El envío a ${destino} está tardando más de lo normal.</p>${avisoSoporte('Si en unos minutos no te llega, escríbenos a')}`
+          : `<p class="text-xs text-vibe-textSecondary">${girando}Enviando tus boletos en PDF a ${destino}…</p>`;
+        modalEstado.innerHTML = `<span class="text-vibe-textSecondary">${girando}Enviando…</span>`;
+      } else if (estadoCorreo.estado === 'enviado') {
+        html = `<p class="text-xs text-vibe-textSecondary"><span class="text-vibe-green font-bold">✓ Enviados</span> a ${destino}. Si no los ves, revisa spam o promociones.</p>
+          <button class="text-xs text-vibe-green underline mt-1" id="btn-no-llego" type="button">¿No te llegó? Cambiar correo o reenviar</button>
+          <p class="text-[11px] text-vibe-textSecondary mt-2">Reclamos o reportes: ${enlaceSoporte()}</p>`;
+        modalEstado.innerHTML = '<span class="text-vibe-green font-bold">✓ ¡Listo! Ya salió el correo.</span><br><span class="text-vibe-textSecondary">Si no lo ves en unos minutos, revisa spam o promociones.</span>';
+      } else if (estadoCorreo.estado === 'fallido') {
+        html = `<div class="rounded-lg border border-red-400/40 bg-red-400/10 p-3">
+            <p class="text-xs text-red-300 font-bold">No pudimos enviar tus boletos.</p>
+            <p class="text-xs text-vibe-textSecondary mt-1">${esc(estadoCorreo.motivo || 'Revisa tu correo e inténtalo de nuevo.')}</p>
+            ${formularioCorreo('')}
+            ${estadoCorreo.reenvios_restantes > 0 ? avisoSoporte() : ''}
+          </div>`;
+        modalEstado.innerHTML = `<span class="text-red-300 font-bold">No pudimos enviarlo.</span><br><span class="text-vibe-textSecondary">${esc(estadoCorreo.motivo || '')}</span><br><span class="text-vibe-textSecondary">Ayuda: ${enlaceSoporte()}</span>`;
+      } else {
+        html = formularioCorreo('Escribe tu correo y te enviamos tus boletos en PDF.');
+        modalEstado.textContent = '';
+      }
+      if (formularioAbierto && estadoCorreo.estado === 'enviado') html += formularioCorreo('Escribe el correo correcto y te los reenviamos.');
+      cajaCorreo.innerHTML = html;
+      document.getElementById('modal-correo-destino').textContent = estadoCorreo.correo || 'tu correo';
+      btnModalCorregir.classList.toggle('hidden', estadoCorreo.estado !== 'fallido');
+
+      const noLlego = document.getElementById('btn-no-llego');
+      if (noLlego) noLlego.addEventListener('click', () => {
+        formularioAbierto = true; pintarEstadoCorreo();
+        const i = document.getElementById('input-correo'); if (i) i.focus();
+      });
+      const form = document.getElementById('form-correo');
+      if (form) form.addEventListener('submit', reenviarCorreo);
+    }
+
+    async function consultarEstadoCorreo() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v2/boleto/correo-estado`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: String(booking.bookingId || '') })
+        });
+        if (res.ok) estadoCorreo = await res.json();
+      } catch (e) { /* sin red: se reintenta */ }
+      consultas++;
+      pintarEstadoCorreo();
+      // Mientras está pendiente se pregunta cada 2 s (hasta ~1,5 min).
+      if (estadoCorreo.estado === 'pendiente' && consultas < 45) setTimeout(consultarEstadoCorreo, 2000);
+    }
+
+    const CORREO_VALIDO = /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,24}$/;
+    async function reenviarCorreo(e) {
+      e.preventDefault();
+      const input = document.getElementById('input-correo');
+      const error = document.getElementById('error-correo');
+      const correo = input.value.trim().toLowerCase();
+      if (!CORREO_VALIDO.test(correo)) {
+        error.textContent = 'Revisa tu correo: parece que le falta algo.'; error.classList.remove('hidden'); input.focus();
+        return;
+      }
+      const liberar = window.TMT.ocupar(document.getElementById('btn-reenviar'), 'Enviando…');
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v2/boleto/correo-reenviar`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: String(booking.bookingId || ''), correo })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(typeof body.detail === 'string' ? body.detail : 'Inténtalo de nuevo en un momento.');
+        estadoCorreo = body;
+        formularioAbierto = false;
+        consultas = 0;
+        try { saveContactoEmail(correo); } catch (e2) { /* sin almacenamiento */ }
+        pintarEstadoCorreo();
+        setTimeout(consultarEstadoCorreo, 2000);
+      } catch (err) {
+        liberar();
+        error.textContent = err.message; error.classList.remove('hidden');
+      }
+    }
+    function saveContactoEmail(correo) {
+      const b = loadBooking();
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Object.assign(b, { contacto: Object.assign({}, b.contacto, { email: correo }) })));
+    }
+
+    pintarEstadoCorreo();
+    if (boletos.length) consultarEstadoCorreo();
+
+    // Aviso del correo: una vez por compra (no en cada recarga). Muestra el
+    // resultado real del envío; si falló, lleva a corregir el correo.
+    const claveAviso = `avisoCorreo:${booking.bookingId || ''}`;
+    let avisoVisto = false;
+    try { avisoVisto = sessionStorage.getItem(claveAviso) === '1'; } catch (e) { /* sin almacenamiento */ }
+    function cerrarModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      try { sessionStorage.setItem(claveAviso, '1'); } catch (e) { /* sin almacenamiento */ }
+    }
+    if (boletos.length && !avisoVisto) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.getElementById('btn-modal-correo').addEventListener('click', cerrarModal);
+      btnModalCorregir.addEventListener('click', () => {
+        cerrarModal();
+        cajaCorreo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const i = document.getElementById('input-correo'); if (i) i.focus();
+      });
+    }
+
+    document.getElementById('btn-nueva-compra').addEventListener('click', () => {
+      sessionStorage.removeItem(STORAGE_KEY);
+      window.location.href = 'buscar-viaje.html';
+    });
+</script>
+</body>
+</html>

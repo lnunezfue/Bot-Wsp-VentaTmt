@@ -1,0 +1,5 @@
+pytest==8.4.2
+httpx==0.28.1
+pyflakes==4.0.0
+# Solo para descubrir_endpoints_venta.py (captura pasiva con Chrome). El bot no lo usa.
+playwright==1.58.0

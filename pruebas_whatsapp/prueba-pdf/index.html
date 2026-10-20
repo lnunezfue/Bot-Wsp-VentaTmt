@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Prueba de descarga PDF</title>
+<!--
+  Página de PRUEBA (no es parte de la mini-webapp). Sirve para saber, en un
+  celular real y DENTRO del navegador de WhatsApp, qué forma de entregar el
+  PDF del boleto funciona. Usa un boleto de ejemplo con datos inventados
+  (boleto-ejemplo.pdf, en esta misma carpeta). Subir la carpeta completa al
+  hosting, p. ej. a /beta/prueba-pdf/, mandarse el enlace por WhatsApp y abrirlo
+  desde el chat.
+-->
+<style>
+  :root { --fondo: #0b141b; --tarjeta: #1f2c34; --borde: #2a3942; --texto: #e9edef; --suave: #8696a0; --verde: #25d366; --rojo: #f15c6d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 20px; margin: 0 0 4px; color: var(--verde); }
+  p { margin: 0 0 12px; color: var(--suave); }
+  .metodo { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px; margin: 12px 0; }
+  .metodo h2 { font-size: 15px; margin: 0 0 4px; }
+  .metodo p { font-size: 13px; margin-bottom: 10px; }
+  button, a.boton { display: inline-block; width: 100%; padding: 12px; border: 0; border-radius: 10px; background: var(--verde); color: #08130d;
+                    font-weight: 700; font-size: 15px; text-align: center; text-decoration: none; cursor: pointer; }
+  .resultado { display: flex; gap: 8px; margin-top: 8px; }
+  .resultado button { background: transparent; border: 1px solid var(--borde); color: var(--texto); font-weight: 600; padding: 9px; }
+  .resultado button.si[aria-pressed="true"] { background: var(--verde); color: #08130d; border-color: var(--verde); }
+  .resultado button.no[aria-pressed="true"] { background: var(--rojo); color: #fff; border-color: var(--rojo); }
+  .nota { font-size: 12px; color: var(--suave); margin-top: 6px; min-height: 1em; }
+  #vista img { width: 100%; border-radius: 8px; margin-top: 10px; background: #fff; }
+  #resumen { width: 100%; min-height: 150px; margin-top: 10px; background: #111b21; color: var(--texto); border: 1px solid var(--borde); border-radius: 8px; padding: 10px; font: 12px/1.4 ui-monospace, monospace; }
+  .entorno { font: 12px/1.4 ui-monospace, monospace; color: var(--suave); word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Prueba: descargar el boleto PDF</h1>
+  <p>Abre esta página <b>desde un chat de WhatsApp</b>. Prueba cada botón en orden y marca si pudiste <b>ver o guardar el PDF</b>. Al final copia el resumen y pégalo.</p>
+  <p class="entorno" id="entorno"></p>
+  <div id="metodos"></div>
+
+  <div class="metodo">
+    <h2>Resumen</h2>
+    <p>Toca "Copiar" y pégalo en el chat con Claude (o haz captura de pantalla).</p>
+    <textarea id="resumen" readonly></textarea>
+    <button id="copiar" type="button" style="margin-top:8px">Copiar resumen</button>
+    <div class="nota" id="nota-copiar"></div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+        integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  const PDF = new URL('boleto-ejemplo.pdf', location.href).href;
+  const NOMBRE = 'boleto-ejemplo.pdf';
+  const ua = navigator.userAgent;
+  const esAndroid = /Android/i.test(ua);
+  const esIOS = /iPhone|iPad|iPod/i.test(ua);
+  document.getElementById('entorno').textContent =
+    `${esAndroid ? 'Android' : esIOS ? 'iPhone/iPad' : 'Otro'} · ${ua}`;
+
+  async function pdfComoBlob() {
+    const r = await fetch(PDF, { cache: 'no-store' });
+    if (!r.ok) throw new Error('No se pudo leer el PDF de ejemplo (' + r.status + ')');
+    return r.blob();
+  }
+
+  const METODOS = [
+    { id: 1, titulo: 'Abrir el PDF (ir al enlace)', detalle: 'La página navega a la dirección https del PDF. Es lo que hace el arreglo nuevo.',
+      accion: () => { location.href = PDF; } },
+    { id: 2, titulo: 'Enlace en pestaña nueva', detalle: 'Un enlace normal con target="_blank".', enlace: { href: PDF, target: '_blank' } },
+    { id: 3, titulo: 'Enlace con "download"', detalle: 'Un enlace https con el atributo download.', enlace: { href: PDF, download: NOMBRE } },
+    { id: 4, titulo: 'Método viejo (blob)', detalle: 'El que usa hoy la página publicada. Se espera que NO funcione.',
+      accion: async () => {
+        const url = URL.createObjectURL(await pdfComoBlob());
+        const a = Object.assign(document.createElement('a'), { href: url, download: NOMBRE });
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } },
+    { id: 5, titulo: 'PDF como "data:"', detalle: 'El archivo va dentro de la propia dirección.',
+      accion: async () => {
+        const blob = await pdfComoBlob();
+        const lector = new FileReader();
+        lector.onload = () => { location.href = lector.result; };
+        lector.readAsDataURL(blob);
+      } },
+    { id: 6, titulo: 'Forzar Chrome (solo Android)', detalle: 'Abre el PDF directamente en Chrome con un enlace intent://.',
+      accion: () => {
+        const u = new URL(PDF);
+        location.href = `intent://${u.host}${u.pathname}#Intent;scheme=https;package=com.android.chrome;` +
+                        `S.browser_fallback_url=${encodeURIComponent(PDF)};end`;
+      } },
+    { id: 7, titulo: 'Compartir / Guardar en archivos', detalle: 'Abre el menú del celular para guardar o enviar el PDF (Web Share).',
+      accion: async () => {
+        const archivo = new File([await pdfComoBlob()], NOMBRE, { type: 'application/pdf' });
+        if (!navigator.share || !(navigator.canShare && navigator.canShare({ files: [archivo] }))) {
+          throw new Error('Este navegador no permite compartir archivos.');
+        }
+        await navigator.share({ files: [archivo], title: 'Boleto' });
+      } },
+    { id: 8, titulo: 'Ver el boleto aquí mismo', detalle: 'Dibuja el PDF como imagen dentro de esta página. Luego mantén presionada la imagen para guardarla, o haz captura.',
+      accion: async () => {
+        const vista = document.getElementById('vista');
+        vista.innerHTML = '';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const doc = await pdfjsLib.getDocument({ data: await (await pdfComoBlob()).arrayBuffer() }).promise;
+        const pagina = await doc.getPage(1);
+        const vp = pagina.getViewport({ scale: 2 });
+        const canvas = Object.assign(document.createElement('canvas'), { width: vp.width, height: vp.height });
+        await pagina.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        const img = document.createElement('img');
+        img.alt = 'Boleto de ejemplo'; img.src = canvas.toDataURL('image/png');
+        vista.appendChild(img);
+        window._canvasBoleto = canvas;
+      }, extra: '<div id="vista"></div>' },
+    { id: 9, titulo: 'Descargar como imagen (PNG)', detalle: 'Primero usa el método 8. Baja la imagen del boleto en vez del PDF.',
+      accion: async () => {
+        if (!window._canvasBoleto) throw new Error('Primero toca el método 8.');
+        const url = window._canvasBoleto.toDataURL('image/png');
+        const a = Object.assign(document.createElement('a'), { href: url, download: 'boleto-ejemplo.png' });
+        document.body.appendChild(a); a.click(); a.remove();
+      } },
+  ];
+
+  const resultados = {};
+  const cont = document.getElementById('metodos');
+  for (const m of METODOS) {
+    const div = document.createElement('div');
+    div.className = 'metodo';
+    div.innerHTML = `<h2>${m.id}. ${m.titulo}</h2><p>${m.detalle}</p>`;
+    let disparador;
+    if (m.enlace) {
+      disparador = document.createElement('a');
+      disparador.className = 'boton';
+      Object.assign(disparador, m.enlace);
+      if (m.enlace.download) disparador.setAttribute('download', m.enlace.download);
+    } else {
+      disparador = document.createElement('button');
+      disparador.type = 'button';
+    }
+    disparador.textContent = 'Probar ' + m.id;
+    const nota = Object.assign(document.createElement('div'), { className: 'nota' });
+    if (m.accion) disparador.addEventListener('click', async () => {
+      nota.textContent = '';
+      try { await m.accion(); } catch (e) { nota.textContent = 'Error: ' + e.message; resultados[m.id] = resultados[m.id] || { error: e.message }; resumir(); }
+    });
+    div.appendChild(disparador);
+    if (m.extra) div.insertAdjacentHTML('beforeend', m.extra);
+    const fila = document.createElement('div');
+    fila.className = 'resultado';
+    for (const [clase, texto, valor] of [['si', 'Funcionó', true], ['no', 'No funcionó', false]]) {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: clase, textContent: texto });
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => {
+        resultados[m.id] = Object.assign({}, resultados[m.id], { ok: valor });
+        fila.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        resumir();
+      });
+      fila.appendChild(b);
+    }
+    div.appendChild(nota);
+    div.appendChild(fila);
+    cont.appendChild(div);
+  }
+
+  function resumir() {
+    const lineas = [`Prueba PDF en WhatsApp — ${esAndroid ? 'Android' : esIOS ? 'iPhone' : 'Otro'}`, ua, ''];
+    for (const m of METODOS) {
+      const r = resultados[m.id] || {};
+      const estado = r.ok === true ? 'FUNCIONÓ' : r.ok === false ? 'NO funcionó' : 'sin probar';
+      lineas.push(`${m.id}. ${m.titulo}: ${estado}${r.error ? ' (error: ' + r.error + ')' : ''}`);
+    }
+    document.getElementById('resumen').value = lineas.join('\n');
+  }
+  resumir();
+
+  document.getElementById('copiar').addEventListener('click', async () => {
+    const area = document.getElementById('resumen');
+    const nota = document.getElementById('nota-copiar');
+    try { await navigator.clipboard.writeText(area.value); nota.textContent = 'Copiado.'; }
+    catch (e) { area.select(); nota.textContent = document.execCommand('copy') ? 'Copiado.' : 'No se pudo copiar: haz captura de pantalla.'; }
+  });
+</script>
+</body>
+</html>

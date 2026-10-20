@@ -1,0 +1,91 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend-real-simulacion-forzada",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-c",
+        "import os, runpy; os.environ.update(VENTA_MODO='simulacion', HOST='127.0.0.1', PORT='8000', CORS_ORIGENES='http://localhost:5500,http://127.0.0.1:5500'); runpy.run_path('api_ventas.py', run_name='__main__')"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "mini-webapp-local",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "tests/servidor_estatico.py",
+        "5500",
+        "--api",
+        "http://127.0.0.1:8000"
+      ],
+      "port": 5500
+    },
+    {
+      "name": "backend-real-simulacion",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "api_ventas.py"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "backend-con-dobles",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "tests/servidor_con_dobles.py",
+        "--capacidad",
+        "10"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "mini-webapp",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "tests/servidor_estatico.py",
+        "5500"
+      ],
+      "port": 5500
+    },
+    {
+      "name": "dobles-8001",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "tests/servidor_con_dobles.py",
+        "--puerto",
+        "8001",
+        "--capacidad",
+        "3",
+        "--web",
+        "http://localhost:5502"
+      ],
+      "port": 8001
+    },
+    {
+      "name": "web-5502",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "tests/servidor_estatico.py",
+        "5502",
+        "--api",
+        "http://127.0.0.1:8001"
+      ],
+      "port": 5502
+    },
+    {
+      "name": "prueba-pdf-5510",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5510",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "pruebas_whatsapp/prueba-pdf"
+      ],
+      "port": 5510
+    }
+  ]
+}
